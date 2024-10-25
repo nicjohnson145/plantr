@@ -1,6 +1,23 @@
 version: "3"
 
 tasks:
+  migration:
+    desc: create a new migration
+    preconditions:
+    - sh: '[[ -n "${NAME}" ]]'
+      msg: 'Must specify $NAME'
+    cmds:
+    - task: migrate-sqlite
+      vars:
+        NAME: "$NAME"
+
+  migrate-sqlite:
+    internal: true
+    dir: internal/storage/sqlite-migrations
+    cmds:
+    - migrate create -ext sql {{ .NAME }}
+
+
   build-controller:
     desc: build the controller binary
     cmds:
