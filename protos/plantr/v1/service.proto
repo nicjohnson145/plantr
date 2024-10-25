@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package plantr.v1;
+
+message LoginRequest {
+
+}
+
+message LoginResponse {
+
+}
+
+service Controller {
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
