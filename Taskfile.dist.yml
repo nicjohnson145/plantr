@@ -1,0 +1,135 @@
+version: "3"
+
+vars:
+  JWT_SIGNING_KEY:
+    sh: "echo ${JWT_SIGNING_KEY:-tZtdk2HM4YGrmplrguqw23oilOG1QKgVTAw9udHi}"
+  YOUR_HOST_ID: "01JBFPFH91WRC352YPQD8P4NHE"
+  IMAGE_HOST: "ghcr.io/nicjohnson145"
+  CONTROLLER_BINARY: "plantr-controller"
+  AGENT_BINARY: "plantr-agent"
+  FUNCTIONAL_USER_HOME: "/tmp/plantr-tests"
+  GIT_ACCESS_TOKEN:
+    sh: "echo $GITHUB_PAT"
+
+tasks:
+  migrate-controller:
+    desc: create a new controller migration
+    preconditions:
+    - sh: '[[ -n "${NAME}" ]]'
+      msg: 'Must specify $NAME'
+    cmds:
+    - task: migrate-controller-sqlite
+      vars:
+        NAME: "$NAME"
+
+  migrate-agent:
+    desc: create a new agent migration
+    preconditions:
+    - sh: '[[ -n "${NAME}" ]]'
+      msg: 'Must specify $NAME'
+    cmds:
+    - task: migrate-agent-sqlite
+      vars:
+        NAME: "$NAME"
+
+  migrate-controller-sqlite:
+    internal: true
+    dir: internal/controller/sqlite-migrations
+    cmds:
+    - migrate create -ext sql {{ .NAME }}
+
+  migrate-agent-sqlite:
+    internal: true
+    dir: internal/agent/sqlite-migrations
+    cmds:
+    - migrate create -ext sql {{ .NAME }}
+
+  mocks:
+    desc: Generate unit test mocks
+    cmds:
+    - mockery
+
+  build-controller:
+    desc: build the controller binary
+    cmds:
+    - CGO_ENABLED=0 go build -o {{ .CONTROLLER_BINARY }} ./cmd/controller
+
+  build-agent:
+    desc: build the agent binary
+    cmds:
+    - CGO_ENABLED=0 go build -o {{ .AGENT_BINARY }} ./cmd/agent
+
+  build-cli:
+    desc: build the cli
+    cmds:
+    - CGO_ENABLED=0 go build -o plantr ./cmd/cli
+
+  run-controller:
+    desc: run controller locally
+    env:
+      SQLITE_DB_PATH: "controller.db"
+      STORAGE_TYPE: "sqlite"
+      JWT_SIGNING_KEY: "{{ .JWT_SIGNING_KEY }}"
+      #LOG_REQUESTS: "T"
+      #LOG_RESPONSES: "T"
+      LOG_FORMAT: "human"
+      LOG_LEVEL: "trace"
+      GIT_URL: "https://fake-url.example.com"
+      GIT_TYPE: "static"
+      GIT_STATIC_CHECKOUT_PATH:
+        sh: "echo ${CHECKOUT}"
+      GIT_ACCESS_TOKEN: "{{ .GIT_ACCESS_TOKEN }}"
+    preconditions:
+    - sh: '[[ -n "${CHECKOUT}" ]]'
+      msg: 'Must specify $CHECKOUT'
+    cmds:
+    - rm -rf {{ .FUNCTIONAL_USER_HOME }}
+    - mkdir -p {{ .FUNCTIONAL_USER_HOME }}
+    - task: build-controller
+    - ./plantr-controller
+
+  run-agent:
+    desc: run agent locally
+    env:
+      #LOG_REQUESTS: "T"
+      #LOG_RESPONSES: "T"
+      LOG_FORMAT: "human"
+      LOG_LEVEL: "trace"
+      PRIVATE_KEY_PATH: "./hack/test-repo-keypairs/test-repo-key"
+      NODE_ID: "{{ .YOUR_HOST_ID }}"
+      PORT: "8090"
+      CONTROLLER_ADDRESS: "http://localhost:8080"
+      POLL_INTERVAL: "0s"
+    cmds:
+    - task: build-agent
+    - ./plantr-agent
+
+  jwt:
+    desc: Generate a JWT
+    cmds:
+    - >
+      jwt encode --secret "{{ .JWT_SIGNING_KEY }}" '{"node_id": "{{ .YOUR_HOST_ID }}"}'
+
+  docker-controller:
+    desc: build controller docker images
+    preconditions:
+    - sh: '[[ -n "${TAG}" ]]'
+      msg: Must specify $TAG
+    cmds:
+    - docker build . -t {{ .IMAGE_HOST }}/{{ .CONTROLLER_BINARY }}:$TAG
+
+  functional-test:
+    desc: run functional tests
+    preconditions:
+    - sh: '[[ -n "${GITHUB_PAT}" ]]'
+      msg: Must specify GITHUB_PAT
+    env:
+      GIT_ACCESS_TOKEN: "{{ .GIT_ACCESS_TOKEN }}"
+    cmds:
+    - docker compose up -d --build --wait
+    - defer: docker compose down --volumes
+    - sleep 3 # TODO: this is trash, real health checks plz
+    - grpcurl -plaintext localhost:9090 plantr.agent.v1.AgentService/Sync
+    - docker compose exec -it agent /bin/bash /home/newuser/test.sh
+    - grpcurl -plaintext localhost:9091 plantr.agent.v1.AgentService/Sync
+    - docker compose exec -it agent-brew /bin/bash /home/newuser/test.sh

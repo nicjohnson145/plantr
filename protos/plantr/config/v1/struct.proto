@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+import "buf/validate/validate.proto";
+
+package plantr.config.v1;
+
+message ConfigFile {
+  string path = 1 [(buf.validate.field).cel = {
+    id: "ConfigFile.path",
+    message: "path is a required field",
+    expression: "size(this) > 0"
+  }];
+  string destination = 2 [(buf.validate.field).cel = {
+    id: "ConfigFile.destination",
+    message: "destination is a required field",
+    expression: "size(this) > 0"
+  }];
+}
+
+message GithubRelease {
+  message AssetPattern {
+    message ArchPattern {
+      string amd64 = 1;
+      string arm64 = 2;
+    }
+    ArchPattern linux = 1;
+    ArchPattern mac = 2;
+  }
+
+  string repo = 1 [(buf.validate.field).cel = {
+    id: "GithubRelease.repo",
+    message: "repo is a required field",
+    expression: "size(this) > 0"
+  }];
+  AssetPattern asset_patterns = 2;
+  string tag = 3 [(buf.validate.field).cel = {
+    id: "GithubRelease.tag",
+    message: "tag is a required field",
+    expression: "size(this) > 0"
+  }];
+  optional string name_override = 4;
+  bool archive_release = 5;
+  optional string binary_regex = 6;
+}
+
+message SystemPackage {
+  message Apt {
+    string name = 1[(buf.validate.field).cel = {
+      id: "SystemPackage.Apt.name",
+      message: "name is a required field",
+      expression: "size(this) > 0"
+    }];
+  }
+  message Brew {
+    string name = 1[(buf.validate.field).cel = {
+      id: "SystemPackage.Brew.name",
+      message: "name is a required field",
+      expression: "size(this) > 0"
+    }];
+  }
+
+  Apt apt = 1;
+  Brew brew = 2;
+
+  option (buf.validate.message).cel = {
+    id: "SystemPackage",
+    message: "at least one of ['apt', 'brew'] is required",
+    expression: "has(this.apt) || has(this.brew)"
+  };
+}
+
+message GitRepo {
+  string url = 1 [(buf.validate.field).cel = {
+    id: "GitRepo.url",
+    message: "url is a required field",
+    expression: "size(this) > 0",
+  }];
+  string location = 2 [(buf.validate.field).cel = {
+    id: "GitRepo.location",
+    message: "location is a required field",
+    expression: "size(this) > 0",
+  }];
+  oneof ref {
+    option (buf.validate.oneof).required = true;
+    string tag = 3;
+    string commit = 4;
+  }
+}
+
+message Golang {
+  string version = 1 [(buf.validate.field).cel = {
+    id: "Golang.version",
+    message: "version is a required field",
+    expression: "size(this) > 0",
+  }];
+}
+
+message GoInstall {
+  string package = 1 [(buf.validate.field).cel = {
+    id: "GoInstall.package",
+    message: "package is a required field",
+    expression: "size(this) > 0",
+  }];
+  optional string version = 2;
+}
+
+message UrlDownload {
+  message OsGroup {
+    message ArchGroup {
+      optional string amd64 = 1;
+      optional string arm64 = 2;
+    }
+
+    ArchGroup linux = 1;
+    ArchGroup mac = 2;
+  }
+
+  OsGroup urls = 1;
+  optional string name_override = 2;
+  bool archive_release = 3;
+}
+
+message RoleGroup {
+  repeated string roles = 1 [(buf.validate.field).cel = {
+    id: "RoleGroup.roles",
+    message: "at least one role is required",
+    expression: "size(this) > 0",
+  }];
+}
+
+message Seed {
+  message Metadata {
+    optional string name = 1;
+  }
+
+  Metadata meta = 1;
+
+  oneof element {
+    option (buf.validate.oneof).required = true;
+    ConfigFile config_file = 2;
+    GithubRelease github_release = 3;
+    SystemPackage system_package = 4;
+    GitRepo git_repo = 5;
+    Golang golang = 6;
+    GoInstall go_install = 7;
+    UrlDownload url_download = 8;
+    RoleGroup role_group = 9;
+  }
+}
+
+message Role {
+  repeated Seed seeds = 1;
+}
+
+message Node {
+  string id = 1 [(buf.validate.field).cel = {
+    id: "Node.id",
+    message: "id is a required field",
+    expression: "size(this) > 0"
+  }];
+  string hostname = 2;
+  string public_key_b64 = 3 [(buf.validate.field).cel = {
+    id: "Node.public_key_b64",
+    message: "public_key_b64 is a required field",
+    expression: "size(this) > 0"
+  }];
+  repeated string roles = 4;
+  string user_home = 5 [(buf.validate.field).cel = {
+    id: "Node.user_home",
+    message: "user_home is a required field",
+    expression: "size(this) > 0"
+  }];
+  string bin_dir = 6;
+  string os = 7 [(buf.validate.field).cel = {
+    id: "Node.os",
+    message: 'os is required to be one of ["linux", "darwin"]',
+    expression: "this in ['linux', 'darwin']"
+  }];
+  string arch = 8 [(buf.validate.field).cel = {
+    id: "Node.arch",
+    message: 'arch is required to be one of ["amd64", "arm64"]',
+    expression: "this in ['amd64', 'arm64']"
+  }];
+  string package_manager = 9 [(buf.validate.field).cel = {
+    id: "Node.package_manager",
+    message: 'package_manager is required to be one of ["apt", "brew"]',
+    expression: "this in ['apt', 'brew']"
+  }];
+}
+
+message Config {
+  map<string, Role> roles = 1;
+  repeated Node nodes = 2;
+}

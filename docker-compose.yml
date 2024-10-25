@@ -1,0 +1,49 @@
+services:
+
+  controller:
+    build:
+      context: .
+      args:
+        TASK: build-controller
+        BINARY_NAME: plantr-controller
+    environment:
+      JWT_SIGNING_KEY: tZtdk2HM4YGrmplrguqw23oilOG1QKgVTAw9udHi
+      GIT_URL: "https://github.com/nicjohnson145/plantr-test-repo.git"
+      SQLITE_DB_PATH: "/opt/controller.db"
+      GIT_ACCESS_TOKEN: $GIT_ACCESS_TOKEN
+      #LOG_LEVEL: "trace"
+      #LOG_RESPONSES: "T"
+      #LOG_FORMAT: "human"
+    ports:
+    - 8080:8080
+
+  agent:
+    build:
+      context: .
+      dockerfile: functional-test-agent-ubuntu.Dockerfile
+    environment:
+      #CONTROLLER_ADDRESS: "http://host.docker.internal:8080"
+      CONTROLLER_ADDRESS: "http://controller:8080"
+      POLL_INTERVAL: "0s"
+      NODE_ID: 01JFE97PWY4VGT8B0BNK4W37JJ
+      PRIVATE_KEY_PATH: "/opt/keypairs/test-repo-key"
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+    volumes:
+    - ./hack/test-repo-keypairs:/opt/keypairs
+    ports:
+    - 9090:8080
+
+  agent-brew:
+    build:
+      context: .
+      dockerfile: functional-test-agent-ubuntu.Dockerfile
+    environment:
+      CONTROLLER_ADDRESS: "http://controller:8080"
+      POLL_INTERVAL: "0s"
+      NODE_ID: 01JHZZ36D8MXQJRXNA4ERJK6SK
+      PRIVATE_KEY_PATH: "/opt/keypairs/test-repo-brew-key"
+    volumes:
+    - ./hack/test-repo-keypairs:/opt/keypairs
+    ports:
+    - 9091:8080

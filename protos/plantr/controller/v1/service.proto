@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package plantr.controller.v1;
+
+import "plantr/controller/v1/struct.proto";
+
+message LoginRequest {
+  // NodeID is the id of the node requesting a token
+  string node_id = 1;
+  // ChallengeID is the id of the login challenge
+  optional string challenge_id = 2;
+  // ChallengeValue is the decrypted value of the login challenge
+  optional string challenge_value = 3;
+}
+
+message LoginResponse {
+  // ChallengeID is the id of the challenge
+  optional string challenge_id = 1;
+  // SealedChallenge is the encrypted challenge value
+  optional string sealed_challenge = 2;
+  // Token is an access token upon successful login
+  optional string token = 3;
+}
+
+message GetSyncDataRequest {}
+
+message GetSyncDataResponse {
+  repeated Seed seeds = 1;
+}
+
+message ForceRefreshRequest {}
+
+message ForceRefreshResponse {}
+
+service ControllerService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc GetSyncData(GetSyncDataRequest) returns (GetSyncDataResponse);
+  rpc ForceRefresh(ForceRefreshRequest) returns (ForceRefreshResponse);
+}

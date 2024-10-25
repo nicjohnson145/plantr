@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package plantr.controller.v1;
+
+enum VersionType {
+  VERSION_TYPE_UNSPECIFIED = 0;
+  VERSION_TYPE_PINNED = 1;
+  VERSION_TYPE_LATEST = 2;
+}
+
+message ConfigFile {
+  string content = 1;
+  string destination = 2;
+}
+
+message GithubRelease {
+  message Authentication {
+    string bearer_auth = 1;
+  }
+  string download_url = 1;
+  Authentication authentication = 2;
+  string destination_directory = 3;
+  optional string name_override = 4;
+  bool archive_release = 5;
+  optional string binary_regex = 6;
+}
+
+message SystemPackage {
+  message AptPkg {
+    string name = 1;
+  }
+  message BrewPkg {
+    string name = 1;
+  }
+  oneof pkg {
+    AptPkg apt = 1;
+    BrewPkg brew = 2;
+  }
+}
+
+message GitRepo {
+  string url = 1;
+  string location = 2;
+  oneof ref {
+    string tag = 3;
+    string commit = 4;
+  }
+}
+
+message Golang {
+  string version = 1;
+}
+
+message GoInstall {
+  string package = 1;
+  optional string version = 2;
+}
+
+message UrlDownload {
+  string download_url = 1;
+  string destination_directory = 2;
+  optional string name_override = 3;
+  bool archive_release = 4;
+}
+
+message Seed {
+  message Metadata {
+    string hash = 1;
+    string display_name = 2;
+  }
+
+  Metadata metadata = 1;
+  oneof element {
+    ConfigFile config_file = 2;
+    GithubRelease github_release = 3;
+    SystemPackage system_package = 4;
+    GitRepo git_repo = 5;
+    Golang golang = 6;
+    GoInstall go_install = 7;
+    UrlDownload url_download = 8;
+  }
+}

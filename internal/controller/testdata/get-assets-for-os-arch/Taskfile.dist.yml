@@ -1,0 +1,46 @@
+version: '3'
+
+tasks:
+  fetch-testdata:
+    desc: fetch live API responses for various releases to test asset detection
+    cmds:
+    - rm -rf *.json
+    - task: fetch-assets
+      vars:
+        REPO: BurntSushi/ripgrep
+        TAG: 14.1.1
+        NAME: ripgrep
+    - task: fetch-assets
+      vars:
+        REPO: jqlang/jq
+        TAG: jq-1.7.1
+        NAME: jq
+    - task: fetch-assets
+      vars:
+        REPO: zellij-org/zellij
+        TAG: v0.41.2
+        NAME: zellij
+    - task: fetch-assets
+      vars:
+        REPO: neovim/neovim
+        TAG: v0.10.3
+        NAME: neovim
+    - task: fetch-assets
+      vars:
+        REPO: rs/curlie
+        TAG: v1.7.2
+        NAME: curlie
+    - task: fetch-assets
+      vars:
+        REPO: kubernetes/minikube
+        TAG: v1.35.0
+        NAME: minikube
+
+
+  fetch-assets:
+    internal: true
+    preconditions:
+    - sh: '[[ -n "${GITHUB_PAT}" ]]'
+      msg: 'Must specify $GITHUB_PAT'
+    cmds:
+    - 'curl -s -H "Authorization: $GITHUB_PAT" https://api.github.com/repos/{{ .REPO }}/releases/tags/{{ .TAG }} > {{ .NAME }}-{{ .TAG }}.json'

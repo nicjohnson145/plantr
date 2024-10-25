@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package plantr.agent.v1;
+
+message SyncRequest {}
+
+message SyncResponse {}
+
+service AgentService {
+  rpc Sync(SyncRequest) returns (SyncResponse);
+}
