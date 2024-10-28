@@ -7,6 +7,12 @@ import (
 	"net/http"
 
 	"github.com/carlmjohnson/requests"
+	"github.com/go-git/go-billy/v5/helper/iofs"
+	gmemfs "github.com/go-git/go-billy/v5/memfs"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/rs/zerolog"
 )
 
@@ -74,5 +80,27 @@ func (g *Github) GetLatestCommit() (string, error) {
 }
 
 func (g *Github) CloneAtCommit(commit string) (fs.FS, error) {
-	panic("not implemented") // TODO: Implement
+	bfs := gmemfs.New()
+	r, err := git.Clone(memory.NewStorage(), bfs, &git.CloneOptions{
+		Auth: &ghttp.BasicAuth{
+			Username: "__token__",
+			Password: g.token,
+		},
+		URL: fmt.Sprintf("https://github.com/%v/%v.git", g.owner, g.repo),
+		Depth: 1,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error cloning: %w", err)
+	}
+
+	w, err := r.Worktree()
+	if err != nil {
+		return nil, fmt.Errorf("error getting worktree: %w", err)
+	}
+
+	if err := w.Checkout(&git.CheckoutOptions{Hash: plumbing.NewHash(commit)}); err != nil {
+		return nil, fmt.Errorf("error checking out commit: %w", err)
+	}
+
+	return iofs.New(bfs), nil
 }
