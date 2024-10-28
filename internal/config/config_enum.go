@@ -12,6 +12,63 @@ import (
 )
 
 const (
+	// GitKindGithub is a GitKind of type github.
+	GitKindGithub GitKind = "github"
+)
+
+var ErrInvalidGitKind = fmt.Errorf("not a valid GitKind, try [%s]", strings.Join(_GitKindNames, ", "))
+
+var _GitKindNames = []string{
+	string(GitKindGithub),
+}
+
+// GitKindNames returns a list of possible string values of GitKind.
+func GitKindNames() []string {
+	tmp := make([]string, len(_GitKindNames))
+	copy(tmp, _GitKindNames)
+	return tmp
+}
+
+// String implements the Stringer interface.
+func (x GitKind) String() string {
+	return string(x)
+}
+
+// IsValid provides a quick way to determine if the typed value is
+// part of the allowed enumerated values
+func (x GitKind) IsValid() bool {
+	_, err := ParseGitKind(string(x))
+	return err == nil
+}
+
+var _GitKindValue = map[string]GitKind{
+	"github": GitKindGithub,
+}
+
+// ParseGitKind attempts to convert a string to a GitKind.
+func ParseGitKind(name string) (GitKind, error) {
+	if x, ok := _GitKindValue[name]; ok {
+		return x, nil
+	}
+	return GitKind(""), fmt.Errorf("%s is %w", name, ErrInvalidGitKind)
+}
+
+// MarshalText implements the text marshaller method.
+func (x GitKind) MarshalText() ([]byte, error) {
+	return []byte(string(x)), nil
+}
+
+// UnmarshalText implements the text unmarshaller method.
+func (x *GitKind) UnmarshalText(text []byte) error {
+	tmp, err := ParseGitKind(string(text))
+	if err != nil {
+		return err
+	}
+	*x = tmp
+	return nil
+}
+
+const (
 	// StorageKindSqlite is a StorageKind of type sqlite.
 	StorageKindSqlite StorageKind = "sqlite"
 )

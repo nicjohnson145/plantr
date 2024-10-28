@@ -15,6 +15,13 @@ sqlite
 */
 type StorageKind string
 
+/*
+ENUM(
+github
+)
+*/
+type GitKind string
+
 const (
 	Port = "port"
 
@@ -24,6 +31,10 @@ const (
 	StorageType = "storage.type"
 
 	SqliteDBPath = "sqlite.db_path"
+
+	GitType        = "git.type"
+	GitAccessToken = "git.access_token"
+	GitUrl         = "git.url"
 )
 
 var (
@@ -35,6 +46,8 @@ var (
 	DefaultStorageType = StorageKindSqlite.String()
 
 	DefaultSqliteDBPath = "/var/plantr/storage.db"
+
+	DefaultGitType = GitKindGithub.String()
 )
 
 func InitConfig() {
@@ -46,6 +59,8 @@ func InitConfig() {
 	viper.SetDefault(StorageType, DefaultStorageType)
 
 	viper.SetDefault(SqliteDBPath, DefaultSqliteDBPath)
+
+	viper.SetDefault(GitType, DefaultGitType)
 
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
