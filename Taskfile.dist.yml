@@ -21,10 +21,13 @@ tasks:
   build-controller:
     desc: build the controller binary
     cmds:
-    - go build -o plantr-controller ./cmd/controller
+    - CGO_ENABLED=0 go build -o plantr-controller ./cmd/controller
 
   run-controller:
     desc: run controller locally
+    env:
+      SQLITE_DB_PATH: "local.db"
+      STORAGE_TYPE: "sqlite"
     cmds:
     - task: build-controller
     - ./plantr-controller

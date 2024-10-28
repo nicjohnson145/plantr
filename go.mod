@@ -4,12 +4,14 @@ go 1.23.0
 
 require (
 	connectrpc.com/connect v1.17.0
+	connectrpc.com/grpcreflect v1.2.0
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.19.0
 	golang.org/x/net v0.29.0
 	google.golang.org/protobuf v1.35.1
+	modernc.org/sqlite v1.18.1
 )
 
 require (
@@ -49,7 +51,6 @@ require (
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.2.1 // indirect
 	modernc.org/opt v0.1.3 // indirect
-	modernc.org/sqlite v1.18.1 // indirect
 	modernc.org/strutil v1.1.3 // indirect
 	modernc.org/token v1.0.0 // indirect
 )

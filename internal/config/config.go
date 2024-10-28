@@ -22,6 +22,8 @@ const (
 	LoggingFormat = "log.format"
 
 	StorageType = "storage.type"
+
+	SqliteDBPath = "sqlite.db_path"
 )
 
 var (
@@ -31,6 +33,8 @@ var (
 	DefaultLogFormat = LogFormatJson.String()
 
 	DefaultStorageType = StorageKindSqlite.String()
+
+	DefaultSqliteDBPath = "/var/plantr/storage.db"
 )
 
 func InitConfig() {
@@ -40,6 +44,8 @@ func InitConfig() {
 	viper.SetDefault(LoggingFormat, DefaultLogFormat)
 
 	viper.SetDefault(StorageType, DefaultStorageType)
+
+	viper.SetDefault(SqliteDBPath, DefaultSqliteDBPath)
 
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
