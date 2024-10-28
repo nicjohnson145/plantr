@@ -1,9 +1,8 @@
-package main
+package config
 
 import (
 	"strings"
 
-	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/viper"
 )
 
@@ -19,8 +18,8 @@ type StorageKind string
 const (
 	Port = "port"
 
-	LogLevel  = "log.level"
-	LogFormat = "log.format"
+	LoggingLevel  = "log.level"
+	LoggingFormat = "log.format"
 
 	StorageType = "storage.type"
 )
@@ -28,8 +27,8 @@ const (
 var (
 	DefaultPort = "8080"
 
-	DefaultLogLevel  = logging.LogLevelInfo.String()
-	DefaultLogFormat = logging.LogFormatJson.String()
+	DefaultLogLevel  = LogLevelInfo.String()
+	DefaultLogFormat = LogFormatJson.String()
 
 	DefaultStorageType = StorageKindSqlite.String()
 )
@@ -37,8 +36,8 @@ var (
 func InitConfig() {
 	viper.SetDefault(Port, DefaultPort)
 
-	viper.SetDefault(LogLevel, DefaultLogLevel)
-	viper.SetDefault(LogFormat, DefaultLogFormat)
+	viper.SetDefault(LoggingLevel, DefaultLogLevel)
+	viper.SetDefault(LoggingFormat, DefaultLogFormat)
 
 	viper.SetDefault(StorageType, DefaultStorageType)
 
