@@ -43,6 +43,8 @@ func NewGithub(conf GithubConfig) (*Github, error) {
 	}, nil
 }
 
+var _ Client = (*Github)(nil)
+
 type Github struct {
 	log    zerolog.Logger
 	client *http.Client
