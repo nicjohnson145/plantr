@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package plantr.v1;
 
+import "plantr/v1/struct.proto";
+
 message LoginRequest {
   // NodeID is the id of the node requesting a token
   string node_id = 1;
@@ -20,6 +22,13 @@ message LoginResponse {
   optional string token = 3;
 }
 
+message GetSyncDataRequest {}
+
+message GetSyncDataReponse {
+  repeated Seed seeds = 1;
+}
+
 service ControllerService {
   rpc Login(LoginRequest) returns (LoginResponse);
+  rpc GetSyncData(GetSyncDataRequest) returns (GetSyncDataReponse);
 }

@@ -1,5 +1,9 @@
 version: "3"
 
+vars:
+  JWT_SIGNING_KEY:
+    sh: "echo ${JWT_SIGNING_KEY:-tZtdk2HM4YGrmplrguqw23oilOG1QKgVTAw9udHi}"
+
 tasks:
   migration:
     desc: create a new migration
@@ -28,6 +32,7 @@ tasks:
     env:
       SQLITE_DB_PATH: "local.db"
       STORAGE_TYPE: "sqlite"
+      JWT_SIGNING_KEY: "{{ .JWT_SIGNING_KEY }}"
     cmds:
     - task: build-controller
     - ./plantr-controller

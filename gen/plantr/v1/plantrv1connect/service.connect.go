@@ -35,17 +35,22 @@ const (
 const (
 	// ControllerServiceLoginProcedure is the fully-qualified name of the ControllerService's Login RPC.
 	ControllerServiceLoginProcedure = "/plantr.v1.ControllerService/Login"
+	// ControllerServiceGetSyncDataProcedure is the fully-qualified name of the ControllerService's
+	// GetSyncData RPC.
+	ControllerServiceGetSyncDataProcedure = "/plantr.v1.ControllerService/GetSyncData"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	controllerServiceServiceDescriptor     = v1.File_plantr_v1_service_proto.Services().ByName("ControllerService")
-	controllerServiceLoginMethodDescriptor = controllerServiceServiceDescriptor.Methods().ByName("Login")
+	controllerServiceServiceDescriptor           = v1.File_plantr_v1_service_proto.Services().ByName("ControllerService")
+	controllerServiceLoginMethodDescriptor       = controllerServiceServiceDescriptor.Methods().ByName("Login")
+	controllerServiceGetSyncDataMethodDescriptor = controllerServiceServiceDescriptor.Methods().ByName("GetSyncData")
 )
 
 // ControllerServiceClient is a client for the plantr.v1.ControllerService service.
 type ControllerServiceClient interface {
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
+	GetSyncData(context.Context, *connect.Request[v1.GetSyncDataRequest]) (*connect.Response[v1.GetSyncDataReponse], error)
 }
 
 // NewControllerServiceClient constructs a client for the plantr.v1.ControllerService service. By
@@ -64,12 +69,19 @@ func NewControllerServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(controllerServiceLoginMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		getSyncData: connect.NewClient[v1.GetSyncDataRequest, v1.GetSyncDataReponse](
+			httpClient,
+			baseURL+ControllerServiceGetSyncDataProcedure,
+			connect.WithSchema(controllerServiceGetSyncDataMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // controllerServiceClient implements ControllerServiceClient.
 type controllerServiceClient struct {
-	login *connect.Client[v1.LoginRequest, v1.LoginResponse]
+	login       *connect.Client[v1.LoginRequest, v1.LoginResponse]
+	getSyncData *connect.Client[v1.GetSyncDataRequest, v1.GetSyncDataReponse]
 }
 
 // Login calls plantr.v1.ControllerService.Login.
@@ -77,9 +89,15 @@ func (c *controllerServiceClient) Login(ctx context.Context, req *connect.Reques
 	return c.login.CallUnary(ctx, req)
 }
 
+// GetSyncData calls plantr.v1.ControllerService.GetSyncData.
+func (c *controllerServiceClient) GetSyncData(ctx context.Context, req *connect.Request[v1.GetSyncDataRequest]) (*connect.Response[v1.GetSyncDataReponse], error) {
+	return c.getSyncData.CallUnary(ctx, req)
+}
+
 // ControllerServiceHandler is an implementation of the plantr.v1.ControllerService service.
 type ControllerServiceHandler interface {
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
+	GetSyncData(context.Context, *connect.Request[v1.GetSyncDataRequest]) (*connect.Response[v1.GetSyncDataReponse], error)
 }
 
 // NewControllerServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -94,10 +112,18 @@ func NewControllerServiceHandler(svc ControllerServiceHandler, opts ...connect.H
 		connect.WithSchema(controllerServiceLoginMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	controllerServiceGetSyncDataHandler := connect.NewUnaryHandler(
+		ControllerServiceGetSyncDataProcedure,
+		svc.GetSyncData,
+		connect.WithSchema(controllerServiceGetSyncDataMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/plantr.v1.ControllerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ControllerServiceLoginProcedure:
 			controllerServiceLoginHandler.ServeHTTP(w, r)
+		case ControllerServiceGetSyncDataProcedure:
+			controllerServiceGetSyncDataHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -109,4 +135,8 @@ type UnimplementedControllerServiceHandler struct{}
 
 func (UnimplementedControllerServiceHandler) Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("plantr.v1.ControllerService.Login is not implemented"))
+}
+
+func (UnimplementedControllerServiceHandler) GetSyncData(context.Context, *connect.Request[v1.GetSyncDataRequest]) (*connect.Response[v1.GetSyncDataReponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("plantr.v1.ControllerService.GetSyncData is not implemented"))
 }

@@ -9,14 +9,19 @@ import (
 
 	"connectrpc.com/connect"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
+	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/parsing"
 	"github.com/nicjohnson145/plantr/internal/storage"
+	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog"
 )
 
 var (
-	ErrNoNodeIDError = errors.New("node_id is required")
+	ErrNoNodeIDError         = errors.New("node_id is required")
+	ErrNoChallengeIDError    = errors.New("challenge_id required")
+	ErrNoChallengeValueError = errors.New("challenge_value required")
+	ErrUnknownNodeIDError    = errors.New("unknown node_id")
 )
 
 type ControllerConfig struct {
@@ -61,6 +66,12 @@ func (c *Controller) logAndHandleError(err error, msg string) error {
 	switch true {
 	case errors.Is(err, ErrNoNodeIDError):
 		return connect.NewError(connect.CodeInvalidArgument, err)
+	case errors.Is(err, ErrNoChallengeIDError):
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	case errors.Is(err, ErrNoChallengeValueError):
+		return connect.NewError(connect.CodeInvalidArgument, err)
+	case errors.Is(err, ErrUnknownNodeIDError):
+		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("permission denied"))
 	default:
 		return err
 	}
@@ -103,6 +114,47 @@ func (c *Controller) Login(ctx context.Context, req *connect.Request[pbv1.LoginR
 		return nil, c.logAndHandleError(err, "error validating")
 	}
 
+	// Get the node that we're supposed to be logging in
+	if err := c.ensureConfig(); err != nil {
+		return nil, c.logAndHandleError(err, "error ensuring config")
+	}
+
+	var node *pbv1.Node
+	for _, n := range c.config.Nodes {
+		if n.Id == req.Msg.NodeId {
+			node = n
+		}
+	}
+	if node == nil {
+		return nil, c.logAndHandleError(ErrUnknownNodeIDError, "unable to find node matching ID")
+	}
+
+	// If we've only got a node id, create a challenge and send it back
+	if req.Msg.ChallengeId == nil {
+		challengeID := ulid.Make().String()
+		challengeValue := ulid.Make().String()
+
+		encryptedValue, err := encryption.EncryptValue(challengeValue, node.PublicKey)
+		if err != nil {
+			return nil, c.logAndHandleError(err, "error encrypting challenge")
+		}
+
+		challenge := &storage.Challenge{
+			ID:    challengeID,
+			Value: challengeValue,
+		}
+		if err := c.store.WriteChallenge(ctx, challenge); err != nil {
+			return nil, c.logAndHandleError(err, "error inserting challenge")
+		}
+
+		return connect.NewResponse(&pbv1.LoginResponse{
+			ChallengeId: &challengeID,
+			SealedChallenge: &encryptedValue,
+		}), nil
+	}
+
+	// Otherwise, lets validate their challenge response and issue them a token
+
 	return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("method unimplemented"))
 }
 
@@ -111,5 +163,17 @@ func (c *Controller) validateLogin(req *pbv1.LoginRequest) error {
 		return ErrNoNodeIDError
 	}
 
+	if req.ChallengeId != nil && req.ChallengeValue == nil {
+		return ErrNoChallengeValueError
+	}
+
+	if req.ChallengeValue != nil && req.ChallengeId == nil {
+		return ErrNoChallengeIDError
+	}
+
 	return nil
+}
+
+func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.GetSyncDataRequest]) (*connect.Response[pbv1.GetSyncDataReponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("method unimplemented"))
 }
