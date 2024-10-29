@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"regexp"
 
 	"github.com/carlmjohnson/requests"
 	"github.com/go-git/go-billy/v5/helper/iofs"
@@ -13,32 +14,22 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	ghttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
+	"github.com/nicjohnson145/hlp"
 	"github.com/rs/zerolog"
 )
 
 type GithubConfig struct {
 	Logger zerolog.Logger
-
 	Token string
-	Owner string
-	Repo  string
 }
 
 func NewGithub(conf GithubConfig) (*Github, error) {
-	if conf.Owner == "" {
-		return nil, fmt.Errorf("owner is required")
-	}
-	if conf.Repo == "" {
-		return nil, fmt.Errorf("repo is required")
-	}
 	if conf.Token == "" {
 		return nil, fmt.Errorf("token is required")
 	}
 
 	return &Github{
 		log:   conf.Logger,
-		owner: conf.Owner,
-		repo:  conf.Repo,
 		token: conf.Token,
 	}, nil
 }
@@ -50,21 +41,36 @@ type Github struct {
 	client *http.Client
 
 	token string
-	owner string
-	repo  string
 }
 
 type githubLatestCommitResponse struct {
 	SHA string `json:"sha"`
 }
 
-func (g *Github) GetLatestCommit() (string, error) {
+func (g *Github) parseUrl(url string) (string, string, error) {
+	exp := regexp.MustCompile(`^(https://github.com/|git@github.com:)(?P<owner>[a-zA-Z0-9_\-]+)/(?P<repo>[a-zA-Z0-9_\-]+).git`)
+	got := hlp.ExtractNamedMatches(exp, exp.FindStringSubmatch(url))
+	if got["owner"] == "" {
+		return "", "", fmt.Errorf("unable to extract owner from URL")
+	}
+	if got["repo"] == "" {
+		return "", "", fmt.Errorf("unable to extract repo from URL")
+	}
+	return got["owner"], got["repo"], nil
+}
+
+func (g *Github) GetLatestCommit(url string) (string, error) {
+	owner, repo, err := g.parseUrl(url)
+	if err != nil {
+		return "", fmt.Errorf("error parsing URL: %w", err)
+	}
+
 	var resp []githubLatestCommitResponse
 	var errResp map[string]any
 
-	err := requests.
+	err = requests.
 		URL("https://api.github.com").
-		Pathf("repos/%v/%v/commits", g.owner, g.repo).
+		Pathf("repos/%v/%v/commits", owner, repo).
 		Param("per_page", "1").
 		Header("accept", "application/vnd.github+json").
 		Header("Authorization", fmt.Sprintf("Bearer %v", g.token)).
@@ -81,14 +87,14 @@ func (g *Github) GetLatestCommit() (string, error) {
 	return resp[0].SHA, nil
 }
 
-func (g *Github) CloneAtCommit(commit string) (fs.FS, error) {
+func (g *Github) CloneAtCommit(url string, commit string) (fs.FS, error) {
 	bfs := gmemfs.New()
 	r, err := git.Clone(memory.NewStorage(), bfs, &git.CloneOptions{
 		Auth: &ghttp.BasicAuth{
 			Username: "__token__",
 			Password: g.token,
 		},
-		URL: fmt.Sprintf("https://github.com/%v/%v.git", g.owner, g.repo),
+		URL:   url,
 		Depth: 1,
 	})
 	if err != nil {
@@ -105,4 +111,8 @@ func (g *Github) CloneAtCommit(commit string) (fs.FS, error) {
 	}
 
 	return iofs.New(bfs), nil
+}
+
+func (g *Github) GetLatestRelease(url string) (string, error) {
+	return "", nil
 }

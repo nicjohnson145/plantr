@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseGithubURL(t *testing.T) {
+func TestGithub_ParseUrl(t *testing.T) {
 	testData := []struct {
 		name  string
 		url   string
@@ -28,7 +28,8 @@ func TestParseGithubURL(t *testing.T) {
 	}
 	for _, tc := range testData {
 		t.Run(tc.name, func(t *testing.T) {
-			owner, repo := parseGithubURL(tc.url)
+			owner, repo, err := (&Github{}).parseUrl(tc.url)
+			require.NoError(t, err)
 			require.Equal(t, tc.owner, owner)
 			require.Equal(t, tc.repo, repo)
 		})
