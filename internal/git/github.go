@@ -43,10 +43,6 @@ type Github struct {
 	token string
 }
 
-type githubLatestCommitResponse struct {
-	SHA string `json:"sha"`
-}
-
 func (g *Github) parseUrl(url string) (string, string, error) {
 	exp := regexp.MustCompile(`^(https://github.com/|git@github.com:)(?P<owner>[a-zA-Z0-9_\-]+)/(?P<repo>[a-zA-Z0-9_\-]+).git`)
 	got := hlp.ExtractNamedMatches(exp, exp.FindStringSubmatch(url))
@@ -65,7 +61,11 @@ func (g *Github) GetLatestCommit(url string) (string, error) {
 		return "", fmt.Errorf("error parsing URL: %w", err)
 	}
 
-	var resp []githubLatestCommitResponse
+	type latestCommit struct {
+		SHA string `json:"sha"`
+	}
+
+	var resp []latestCommit
 	var errResp map[string]any
 
 	err = requests.
@@ -114,5 +114,30 @@ func (g *Github) CloneAtCommit(url string, commit string) (fs.FS, error) {
 }
 
 func (g *Github) GetLatestRelease(url string) (string, error) {
-	return "", nil
+	owner, repo, err := g.parseUrl(url)
+	if err != nil {
+		return "", fmt.Errorf("error parsing URL: %w", err)
+	}
+
+	type respType struct {
+		TagName string `json:"tag_name"`
+	}
+	
+	var resp respType
+	var errResp map[string]any
+
+	err = requests.
+		URL("https://api.github.com").
+		Pathf("repos/%v/%v/releases/latest", owner, repo).
+		Header("accept", "application/vnd.github+json").
+		Header("Authorization", fmt.Sprintf("Bearer %v", g.token)).
+		ToJSON(&resp).
+		ErrorJSON(&errResp).
+		Fetch(context.Background())
+	if err != nil {
+		g.log.Debug().Interface("body", errResp).Msg("error response body")
+		return "", fmt.Errorf("error getting latest release: %w", err)
+	}
+
+	return resp.TagName, nil
 }
