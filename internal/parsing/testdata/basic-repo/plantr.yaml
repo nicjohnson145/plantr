@@ -1,0 +1,11 @@
+roles:
+  first_role:
+    seeds:
+    - github_release_binary:
+        repo_url: https://github.com/foo/bar
+nodes:
+- id: node-one-id
+  hostname: node_one
+  public_key: node-one-public-key
+  roles:
+  - first_role

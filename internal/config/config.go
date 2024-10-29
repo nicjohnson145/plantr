@@ -35,6 +35,8 @@ const (
 	GitType        = "git.type"
 	GitAccessToken = "git.access_token"
 	GitUrl         = "git.url"
+
+	JWTSigningKey = "jwt.signing_key"
 )
 
 var (

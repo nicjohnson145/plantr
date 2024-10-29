@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -10,7 +11,10 @@ import (
 	_ "modernc.org/sqlite" // import sqlite driver
 )
 
-type Client interface{}
+type Client interface {
+	WriteChallenge(ctx context.Context, challenge *Challenge) error
+	ReadChallenge(ctx context.Context, id string) (*Challenge, error)
+}
 
 func NewFromEnv(logger zerolog.Logger) (Client, func(), error) {
 	cleanup := func() {}
@@ -53,7 +57,7 @@ func NewFromEnv(logger zerolog.Logger) (Client, func(), error) {
 		if err != nil {
 			return nil, cleanup, fmt.Errorf("error initializing sqlite client: %w", err)
 		}
-		return sqlite, cleanup, nil 
+		return sqlite, cleanup, nil
 	default:
 		return nil, cleanup, fmt.Errorf("unhandled type of '%v'", kind)
 	}

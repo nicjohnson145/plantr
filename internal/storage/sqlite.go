@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/rs/zerolog"
+	hsqlx "github.com/nicjohnson145/hlp/sqlx"
 )
 
 type SqlLiteConfig struct {
@@ -40,6 +41,47 @@ func (s *SqlLite) init() error {
 	return nil
 }
 
-func (s *SqlLite) RegisterHost(ctx context.Context, host *Host) (*Host, error) {
-	return nil, nil
+
+func (s *SqlLite) WriteChallenge(ctx context.Context, challenge *Challenge) error {
+	stmt := `
+		INSERT INTO
+			challenge
+			(
+				id,
+				value
+			)
+		VALUES 
+			(
+
+				:id,
+				:value
+			)
+	`
+
+	if _, err := s.db.NamedExecContext(ctx, stmt, challenge); err != nil {
+		return fmt.Errorf("error inserting: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SqlLite) ReadChallenge(ctx context.Context, id string) (*Challenge, error) {
+	stmt := `
+		SELECT
+			*
+		FROM
+			challenge
+		WHERE
+			id = :id
+	`
+	args := map[string]any{
+		"id": id,
+	}
+
+	rows, err := hsqlx.RequireExactSelectNamedCtx[Challenge](ctx, 1, s.db, stmt, args)
+	if err != nil {
+		return nil, fmt.Errorf("error querying: %w", err)
+	}
+
+	return &rows[0], nil
 }

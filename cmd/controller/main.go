@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -11,14 +12,15 @@ import (
 	"syscall"
 	"time"
 
+	"connectrpc.com/grpcreflect"
 	"github.com/nicjohnson145/plantr/gen/plantr/v1/plantrv1connect"
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/controller"
+	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"connectrpc.com/grpcreflect"
 )
 
 func main() {
@@ -37,6 +39,13 @@ func run() error {
 		Format: config.LogFormat(viper.GetString(config.LoggingFormat)),
 	})
 
+	// JWT bits
+	jwtKeyStr := viper.GetString(config.JWTSigningKey)
+	if jwtKeyStr == "" {
+		logger.Error().Msg("must provide JWT signing key")
+		return fmt.Errorf("must provide JWT signing key")
+	}
+
 	storage, storageCleanup, err := storage.NewFromEnv(logger)
 	defer storageCleanup()
 	if err != nil {
@@ -44,16 +53,35 @@ func run() error {
 		return err
 	}
 
-	_ = storage
+	gitClient, err := git.NewFromEnv(logger)
+	if err != nil {
+		logger.Err(err).Msg("error initializing git client")
+		return err
+	}
 
 	// Reflection
 	reflector := grpcreflect.NewStaticReflector(
 		plantrv1connect.ControllerName,
 	)
 
-	ctrl := controller.NewController(controller.ControllerConfig{
-		Logger: logger,
+	// Get the root configuration for the repo
+	url := viper.GetString(config.GitUrl)
+	if url == "" {
+		logger.Error().Msg("must provide a repo url")
+		return fmt.Errorf("must provide a repo url")
+	}
+
+	ctrl, err := controller.NewController(controller.ControllerConfig{
+		Logger:        logger,
+		StorageClient: storage,
+		GitClient:     gitClient,
+		RepoURL:       url,
+		JWTSigningKey: []byte(jwtKeyStr),
 	})
+	if err != nil {
+		logger.Err(err).Msg("error initializing controller")
+		return err
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(plantrv1connect.NewControllerHandler(ctrl))
@@ -61,15 +89,16 @@ func run() error {
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 
 	port := viper.GetString(config.Port)
-	lis, err := net.Listen("tcp4", ":" + port)
+	lis, err := net.Listen("tcp4", ":"+port)
 	if err != nil {
 		logger.Err(err).Msg("error listening")
 		return err
 	}
 
 	svr := http.Server{
-		Addr:    ":" + port,
-		Handler: h2c.NewHandler(mux, &http2.Server{}),
+		Addr:              ":" + port,
+		Handler:           h2c.NewHandler(mux, &http2.Server{}),
+		ReadHeaderTimeout: 3 * time.Second,
 	}
 
 	// Setup signal handlers so we can gracefully shutdown
@@ -80,15 +109,13 @@ func run() error {
 	wg.Add(1)
 
 	go func() {
-		select {
-		case s := <-sigChan:
-			logger.Info().Msgf("got signal %v, attempting graceful shutdown", s)
-			dieCtx, dieCancel := context.WithTimeout(ctx, 10*time.Second)
-			defer dieCancel()
-			svr.Shutdown(dieCtx)
-			cancel()
-			wg.Done()
-		}
+		s := <-sigChan
+		logger.Info().Msgf("got signal %v, attempting graceful shutdown", s)
+		dieCtx, dieCancel := context.WithTimeout(ctx, 10*time.Second)
+		defer dieCancel()
+		_ = svr.Shutdown(dieCtx)
+		cancel()
+		wg.Done()
 	}()
 
 	logger.Info().Msgf("starting server on port %v", port)
