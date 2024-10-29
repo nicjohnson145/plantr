@@ -61,7 +61,7 @@ func run() error {
 
 	// Reflection
 	reflector := grpcreflect.NewStaticReflector(
-		plantrv1connect.ControllerName,
+		plantrv1connect.ControllerServiceName,
 	)
 
 	// Get the root configuration for the repo
@@ -84,7 +84,7 @@ func run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(plantrv1connect.NewControllerHandler(ctrl))
+	mux.Handle(plantrv1connect.NewControllerServiceHandler(ctrl))
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 

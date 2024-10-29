@@ -21,8 +21,8 @@ import (
 const _ = connect.IsAtLeastVersion1_13_0
 
 const (
-	// ControllerName is the fully-qualified name of the Controller service.
-	ControllerName = "plantr.v1.Controller"
+	// ControllerServiceName is the fully-qualified name of the ControllerService service.
+	ControllerServiceName = "plantr.v1.ControllerService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -33,80 +33,80 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// ControllerLoginProcedure is the fully-qualified name of the Controller's Login RPC.
-	ControllerLoginProcedure = "/plantr.v1.Controller/Login"
+	// ControllerServiceLoginProcedure is the fully-qualified name of the ControllerService's Login RPC.
+	ControllerServiceLoginProcedure = "/plantr.v1.ControllerService/Login"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	controllerServiceDescriptor     = v1.File_plantr_v1_service_proto.Services().ByName("Controller")
-	controllerLoginMethodDescriptor = controllerServiceDescriptor.Methods().ByName("Login")
+	controllerServiceServiceDescriptor     = v1.File_plantr_v1_service_proto.Services().ByName("ControllerService")
+	controllerServiceLoginMethodDescriptor = controllerServiceServiceDescriptor.Methods().ByName("Login")
 )
 
-// ControllerClient is a client for the plantr.v1.Controller service.
-type ControllerClient interface {
+// ControllerServiceClient is a client for the plantr.v1.ControllerService service.
+type ControllerServiceClient interface {
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 }
 
-// NewControllerClient constructs a client for the plantr.v1.Controller service. By default, it uses
-// the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
-// connect.WithGRPCWeb() options.
+// NewControllerServiceClient constructs a client for the plantr.v1.ControllerService service. By
+// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
+// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewControllerClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ControllerClient {
+func NewControllerServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ControllerServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	return &controllerClient{
+	return &controllerServiceClient{
 		login: connect.NewClient[v1.LoginRequest, v1.LoginResponse](
 			httpClient,
-			baseURL+ControllerLoginProcedure,
-			connect.WithSchema(controllerLoginMethodDescriptor),
+			baseURL+ControllerServiceLoginProcedure,
+			connect.WithSchema(controllerServiceLoginMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
-// controllerClient implements ControllerClient.
-type controllerClient struct {
+// controllerServiceClient implements ControllerServiceClient.
+type controllerServiceClient struct {
 	login *connect.Client[v1.LoginRequest, v1.LoginResponse]
 }
 
-// Login calls plantr.v1.Controller.Login.
-func (c *controllerClient) Login(ctx context.Context, req *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
+// Login calls plantr.v1.ControllerService.Login.
+func (c *controllerServiceClient) Login(ctx context.Context, req *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
 	return c.login.CallUnary(ctx, req)
 }
 
-// ControllerHandler is an implementation of the plantr.v1.Controller service.
-type ControllerHandler interface {
+// ControllerServiceHandler is an implementation of the plantr.v1.ControllerService service.
+type ControllerServiceHandler interface {
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 }
 
-// NewControllerHandler builds an HTTP handler from the service implementation. It returns the path
-// on which to mount the handler and the handler itself.
+// NewControllerServiceHandler builds an HTTP handler from the service implementation. It returns
+// the path on which to mount the handler and the handler itself.
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewControllerHandler(svc ControllerHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	controllerLoginHandler := connect.NewUnaryHandler(
-		ControllerLoginProcedure,
+func NewControllerServiceHandler(svc ControllerServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	controllerServiceLoginHandler := connect.NewUnaryHandler(
+		ControllerServiceLoginProcedure,
 		svc.Login,
-		connect.WithSchema(controllerLoginMethodDescriptor),
+		connect.WithSchema(controllerServiceLoginMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/plantr.v1.Controller/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/plantr.v1.ControllerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case ControllerLoginProcedure:
-			controllerLoginHandler.ServeHTTP(w, r)
+		case ControllerServiceLoginProcedure:
+			controllerServiceLoginHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
 	})
 }
 
-// UnimplementedControllerHandler returns CodeUnimplemented from all methods.
-type UnimplementedControllerHandler struct{}
+// UnimplementedControllerServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedControllerServiceHandler struct{}
 
-func (UnimplementedControllerHandler) Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("plantr.v1.Controller.Login is not implemented"))
+func (UnimplementedControllerServiceHandler) Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("plantr.v1.ControllerService.Login is not implemented"))
 }

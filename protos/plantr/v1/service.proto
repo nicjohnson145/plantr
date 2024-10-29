@@ -20,6 +20,6 @@ message LoginResponse {
   optional string token = 3;
 }
 
-service Controller {
+service ControllerService {
   rpc Login(LoginRequest) returns (LoginResponse);
 }
