@@ -11,6 +11,7 @@ import (
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/storage"
+	"github.com/nicjohnson145/plantr/internal/token"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -78,15 +79,15 @@ func TestController_Login(t *testing.T) {
 
 		require.NotEmpty(t, resp.Msg.Token)
 
-		token, err := ParseJWT(*resp.Msg.Token, signingKey)
+		gotToken, err := token.ParseJWT(*resp.Msg.Token, signingKey)
 		require.NoError(t, err)
 
-		wantToken := &Token{
+		wantToken := &token.Token{
 			StandardClaims: jwt.StandardClaims{
 				ExpiresAt: now.Add(10 * 24 * time.Hour).Unix(),
 			},
 			NodeID: nodeID,
 		}
-		require.Equal(t, wantToken, token)
+		require.Equal(t, wantToken, gotToken)
 	})
 }

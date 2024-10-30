@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"sync"
@@ -14,6 +15,7 @@ import (
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/git"
+	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsing"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/token"
@@ -42,14 +44,19 @@ type ControllerConfig struct {
 }
 
 func NewController(conf ControllerConfig) (*Controller, error) {
+	repoUrl := conf.RepoURL
+	if !strings.HasSuffix(repoUrl, ".git") {
+		repoUrl = repoUrl + ".git"
+	}
 	ctrl := &Controller{
 		log:           conf.Logger,
 		git:           conf.GitClient,
 		store:         conf.StorageClient,
-		repoUrl:       conf.RepoURL,
+		repoUrl:       repoUrl,
 		jwtSigningKey: conf.JWTSigningKey,
 		jwtDuration:   conf.JWTDuration,
 		nowFunc:       conf.NowFunc,
+		mu:            &sync.RWMutex{},
 	}
 
 	if ctrl.nowFunc == nil {
@@ -113,7 +120,7 @@ func (c *Controller) ensureConfig() error {
 
 	c.log.Debug().Msg("no config loaded, loading now")
 
-	c.log.Trace().Msg("fetching latest commit")
+	c.log.Trace().Msgf("fetching latest commit for %v", c.repoUrl)
 	latest, err := c.git.GetLatestCommit(c.repoUrl)
 	if err != nil {
 		return fmt.Errorf("error getting latest commit: %w", err)
@@ -125,6 +132,7 @@ func (c *Controller) ensureConfig() error {
 		return fmt.Errorf("error cloning repo: %w", err)
 	}
 
+	c.log.Trace().Msg("parsing config from cloned repo")
 	config, err := parsing.ParseRepoFS(repoFS)
 	if err != nil {
 		return fmt.Errorf("error parsing config: %w", err)
@@ -225,5 +233,17 @@ func (c *Controller) validateLogin(req *pbv1.LoginRequest) error {
 }
 
 func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.GetSyncDataRequest]) (*connect.Response[pbv1.GetSyncDataReponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("method unimplemented"))
+	token, err := interceptors.ClaimsFromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	c.log.Info().Msgf("parsing sync data for %v", token.NodeID)
+	if err := c.ensureConfig(); err != nil {
+		return nil, c.logAndHandleError(err, "error ensuring config")
+	}
+
+	return connect.NewResponse(&pbv1.GetSyncDataReponse{
+		Seeds: []*pbv1.Seed{},
+	}), nil
 }

@@ -3,6 +3,7 @@ version: "3"
 vars:
   JWT_SIGNING_KEY:
     sh: "echo ${JWT_SIGNING_KEY:-tZtdk2HM4YGrmplrguqw23oilOG1QKgVTAw9udHi}"
+  YOUR_HOST_ID: "01JBFPFH91WRC352YPQD8P4NHE"
 
 tasks:
   migration:
@@ -40,6 +41,14 @@ tasks:
       LOG_REQUESTS: "T"
       LOG_RESPONSES: "T"
       LOG_FORMAT: "human"
+      GIT_URL: "https://github.com/nicjohnson145/plantr-test-repo"
+      LOG_LEVEL: "trace"
     cmds:
     - task: build-controller
     - ./plantr-controller
+
+  jwt:
+    desc: Generate a JWT
+    cmds:
+    - >
+      jwt encode --secret "{{ .JWT_SIGNING_KEY }}" '{"node_id": "{{ .YOUR_HOST_ID }}"}'
