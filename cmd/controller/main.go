@@ -12,11 +12,14 @@ import (
 	"syscall"
 	"time"
 
+	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	"github.com/nicjohnson145/hlp/set"
 	"github.com/nicjohnson145/plantr/gen/plantr/v1/plantrv1connect"
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/controller"
 	"github.com/nicjohnson145/plantr/internal/git"
+	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
@@ -77,6 +80,7 @@ func run() error {
 		GitClient:     gitClient,
 		RepoURL:       url,
 		JWTSigningKey: []byte(jwtKeyStr),
+		JWTDuration:   viper.GetDuration(config.JWTDuration),
 	})
 	if err != nil {
 		logger.Err(err).Msg("error initializing controller")
@@ -84,7 +88,24 @@ func run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(plantrv1connect.NewControllerServiceHandler(ctrl))
+	mux.Handle(plantrv1connect.NewControllerServiceHandler(
+		ctrl,
+		connect.WithInterceptors(
+			interceptors.NewLoggingInterceptor(
+				logger,
+				interceptors.LoggingInterceptorConfig{
+					LogRequests:  viper.GetBool(config.LogRequests),
+					LogResponses: viper.GetBool(config.LogResponses),
+				},
+			),
+			interceptors.NewAuthInterceptor(
+				[]byte(jwtKeyStr),
+				set.New(
+					"/plantr.v1.ControllerService/Login",
+				),
+			),
+		),
+	))
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 

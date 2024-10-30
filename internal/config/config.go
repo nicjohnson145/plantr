@@ -27,6 +27,8 @@ const (
 
 	LoggingLevel  = "log.level"
 	LoggingFormat = "log.format"
+	LogRequests   = "log.requests"
+	LogResponses  = "log.responses"
 
 	StorageType = "storage.type"
 
@@ -37,19 +39,24 @@ const (
 	GitUrl         = "git.url"
 
 	JWTSigningKey = "jwt.signing_key"
+	JWTDuration   = "jwt.duration"
 )
 
 var (
 	DefaultPort = "8080"
 
-	DefaultLogLevel  = LogLevelInfo.String()
-	DefaultLogFormat = LogFormatJson.String()
+	DefaultLogLevel     = LogLevelInfo.String()
+	DefaultLogFormat    = LogFormatJson.String()
+	DefaultLogRequests  = false
+	DefaultLogResponses = false
 
 	DefaultStorageType = StorageKindSqlite.String()
 
 	DefaultSqliteDBPath = "/var/plantr/storage.db"
 
 	DefaultGitType = GitKindGithub.String()
+
+	DefaultJWTDuration = "240h" // 10 days
 )
 
 func InitConfig() {
@@ -57,12 +64,16 @@ func InitConfig() {
 
 	viper.SetDefault(LoggingLevel, DefaultLogLevel)
 	viper.SetDefault(LoggingFormat, DefaultLogFormat)
+	viper.SetDefault(LogRequests, DefaultLogRequests)
+	viper.SetDefault(LogResponses, DefaultLogResponses)
 
 	viper.SetDefault(StorageType, DefaultStorageType)
 
 	viper.SetDefault(SqliteDBPath, DefaultSqliteDBPath)
 
 	viper.SetDefault(GitType, DefaultGitType)
+
+	viper.SetDefault(JWTDuration, DefaultJWTDuration)
 
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

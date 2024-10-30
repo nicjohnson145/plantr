@@ -21,6 +21,10 @@ tasks:
     cmds:
     - migrate create -ext sql {{ .NAME }}
 
+  mocks:
+    desc: Generate unit test mocks
+    cmds:
+    - mockery
 
   build-controller:
     desc: build the controller binary
@@ -33,6 +37,9 @@ tasks:
       SQLITE_DB_PATH: "local.db"
       STORAGE_TYPE: "sqlite"
       JWT_SIGNING_KEY: "{{ .JWT_SIGNING_KEY }}"
+      LOG_REQUESTS: "T"
+      LOG_RESPONSES: "T"
+      LOG_FORMAT: "human"
     cmds:
     - task: build-controller
     - ./plantr-controller

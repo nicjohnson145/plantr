@@ -4,24 +4,30 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"sync"
 
 	"connectrpc.com/connect"
+	"github.com/golang-jwt/jwt"
+	hsqlx "github.com/nicjohnson145/hlp/sqlx"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/parsing"
 	"github.com/nicjohnson145/plantr/internal/storage"
+	"github.com/nicjohnson145/plantr/internal/token"
 	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog"
 )
 
 var (
-	ErrNoNodeIDError         = errors.New("node_id is required")
-	ErrNoChallengeIDError    = errors.New("challenge_id required")
-	ErrNoChallengeValueError = errors.New("challenge_value required")
-	ErrUnknownNodeIDError    = errors.New("unknown node_id")
+	ErrNoNodeIDError                = errors.New("node_id is required")
+	ErrNoChallengeIDError           = errors.New("challenge_id required")
+	ErrNoChallengeValueError        = errors.New("challenge_value required")
+	ErrUnknownNodeIDError           = errors.New("unknown node_id")
+	ErrUnknownChallengeIDError      = errors.New("unknown challenge_id")
+	ErrIncorrectChallengeValueError = errors.New("incorrect challenge_value")
 )
 
 type ControllerConfig struct {
@@ -30,6 +36,9 @@ type ControllerConfig struct {
 	StorageClient storage.Client
 	RepoURL       string
 	JWTSigningKey []byte
+	JWTDuration   time.Duration
+
+	NowFunc func() time.Time // for unit tests
 }
 
 func NewController(conf ControllerConfig) (*Controller, error) {
@@ -39,6 +48,14 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		store:         conf.StorageClient,
 		repoUrl:       conf.RepoURL,
 		jwtSigningKey: conf.JWTSigningKey,
+		jwtDuration:   conf.JWTDuration,
+		nowFunc:       conf.NowFunc,
+	}
+
+	if ctrl.nowFunc == nil {
+		ctrl.nowFunc = func() time.Time {
+			return time.Now().UTC()
+		}
 	}
 
 	return ctrl, nil
@@ -50,9 +67,16 @@ type Controller struct {
 	store         storage.Client
 	repoUrl       string
 	jwtSigningKey []byte
+	jwtDuration   time.Duration
 
 	mu     *sync.RWMutex
 	config *pbv1.Config
+
+	nowFunc func() time.Time // for unit tests
+}
+
+func (c *Controller) now() time.Time {
+	return c.nowFunc()
 }
 
 func (c *Controller) logAndHandleError(err error, msg string) error {
@@ -71,6 +95,10 @@ func (c *Controller) logAndHandleError(err error, msg string) error {
 	case errors.Is(err, ErrNoChallengeValueError):
 		return connect.NewError(connect.CodeInvalidArgument, err)
 	case errors.Is(err, ErrUnknownNodeIDError):
+		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("permission denied"))
+	case errors.Is(err, ErrUnknownChallengeIDError):
+		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("permission denied"))
+	case errors.Is(err, ErrIncorrectChallengeValueError):
 		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("permission denied"))
 	default:
 		return err
@@ -148,14 +176,36 @@ func (c *Controller) Login(ctx context.Context, req *connect.Request[pbv1.LoginR
 		}
 
 		return connect.NewResponse(&pbv1.LoginResponse{
-			ChallengeId: &challengeID,
+			ChallengeId:     &challengeID,
 			SealedChallenge: &encryptedValue,
 		}), nil
 	}
 
 	// Otherwise, lets validate their challenge response and issue them a token
+	storedChallenge, err := c.store.ReadChallenge(ctx, *req.Msg.ChallengeId)
+	if err != nil {
+		if errors.Is(err, hsqlx.ErrNotFoundError) {
+			return nil, c.logAndHandleError(ErrUnknownChallengeIDError, "challenge id not found")
+		}
+		return nil, c.logAndHandleError(err, "error reading challenge")
+	}
+	if storedChallenge.Value != *req.Msg.ChallengeValue {
+		return nil, c.logAndHandleError(ErrIncorrectChallengeValueError, "incorrect challenge value")
+	}
 
-	return nil, connect.NewError(connect.CodeUnimplemented, fmt.Errorf("method unimplemented"))
+	token, err := token.GenerateJWT(c.jwtSigningKey, token.Token{
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: c.now().Add(c.jwtDuration).Unix(),
+		},
+		NodeID: req.Msg.NodeId,
+	})
+	if err != nil {
+		return nil, c.logAndHandleError(err, "error generating JWT")
+	}
+
+	return connect.NewResponse(&pbv1.LoginResponse{
+		Token: &token,
+	}), nil
 }
 
 func (c *Controller) validateLogin(req *pbv1.LoginRequest) error {
