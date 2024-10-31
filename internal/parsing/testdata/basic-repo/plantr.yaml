@@ -3,6 +3,9 @@ roles:
     seeds:
     - github_release_binary:
         repo_url: https://github.com/foo/bar
+    - config_file:
+        template_path: templates/some-config
+        destination: ~/.some-config
 nodes:
 - id: node-one-id
   hostname: node_one

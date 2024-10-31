@@ -35,6 +35,15 @@ func TestParseRepoFS(t *testing.T) {
 								},
 							},
 						},
+						{
+							Element: &pbv1.Seed_ConfigFile{
+								ConfigFile: &pbv1.ConfigFile{
+									TemplatePath: "templates/some-config",
+									Destination: "~/.some-config",
+									TemplateContent: "im a config file on {{ .Host }}\n",
+								},
+							},
+						},
 					},
 				},
 			},

@@ -13,9 +13,19 @@ message GithubReleaseBinary {
   string repo_url = 1;
 }
 
+message ConfigFile {
+  // TemplatePath is the path in the config repo where this template lives
+  string template_path = 1;
+  // Content is the content of the template file, this is filled out during parsing
+  string template_content = 2;
+  // Destination is the path this config file should be rendered on the target host
+  string destination = 3;
+}
+
 message Seed {
   oneof element {
     GithubReleaseBinary github_release_binary = 1;
+    ConfigFile config_file = 2;
   }
 }
 

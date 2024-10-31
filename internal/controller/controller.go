@@ -247,3 +247,7 @@ func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.
 		Seeds: []*pbv1.Seed{},
 	}), nil
 }
+
+func (c *Controller) collectSeeds(nodeID string) ([]*pbv1.Seed, error) {
+	return nil, nil
+}
