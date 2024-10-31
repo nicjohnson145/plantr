@@ -59,6 +59,10 @@ tasks:
       LOG_RESPONSES: "T"
       LOG_FORMAT: "human"
       LOG_LEVEL: "trace"
+      PRIVATE_KEY_PATH: "./hack/test-repo-keypairs/test-repo-key"
+      NODE_ID: "{{ .YOUR_HOST_ID }}"
+      PORT: "8090"
+      CONTROLLER_ADDRESS: "http://localhost:8080"
     cmds:
     - task: build-agent
     - ./plantr-agent

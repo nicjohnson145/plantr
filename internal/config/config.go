@@ -40,6 +40,11 @@ const (
 
 	JWTSigningKey = "jwt.signing_key"
 	JWTDuration   = "jwt.duration"
+
+	ControllerAddress = "controller.address"
+	PrivateKeyPath    = "private_key.path"
+	NodeID            = "node.id"
+	AgentPollInterval = "agent.poll_interval"
 )
 
 var (
@@ -57,6 +62,8 @@ var (
 	DefaultGitType = GitKindGithub.String()
 
 	DefaultJWTDuration = "240h" // 10 days
+
+	DefaultAgentPollInterval = "60s"
 )
 
 func InitConfig() {
@@ -74,6 +81,8 @@ func InitConfig() {
 	viper.SetDefault(GitType, DefaultGitType)
 
 	viper.SetDefault(JWTDuration, DefaultJWTDuration)
+
+	viper.SetDefault(AgentPollInterval, DefaultAgentPollInterval)
 
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

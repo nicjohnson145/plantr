@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
+	plantrv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 	"github.com/nicjohnson145/plantr/gen/plantr/v1/plantrv1connect"
 	"github.com/nicjohnson145/plantr/internal/agent"
 	"github.com/nicjohnson145/plantr/internal/config"
@@ -43,8 +45,50 @@ func run() error {
 		plantrv1connect.AgentServiceName,
 	)
 
-	srv := agent.NewAgent(agent.AgentConfig{
-		Logger: logger,
+	// Actual sync worker
+	keyPath := viper.GetString(config.PrivateKeyPath)
+	if keyPath == "" {
+		msg := "private key path must be set"
+		logger.Error().Msg(msg)
+		return fmt.Errorf(msg)
+	}
+	privateKeyBytes, err := os.ReadFile(keyPath)
+	if err != nil {
+		logger.Err(err).Msg("error reading private key")
+		return err
+	}
+
+	controllerAddress := viper.GetString(config.ControllerAddress)
+	if controllerAddress == "" {
+		msg := "controller address must be set"
+		logger.Error().Msg(msg)
+		return fmt.Errorf(msg)
+	}
+
+	nodeID := viper.GetString(config.NodeID)
+	if nodeID == "" {
+		msg := "node id must be set"
+		logger.Error().Msg(msg)
+		return fmt.Errorf(msg)
+	}
+
+	pollInterval := viper.GetDuration(config.AgentPollInterval)
+	if pollInterval.Seconds() == 0 {
+		msg := "poll interval must be set"
+		logger.Error().Msg(msg)
+		return fmt.Errorf(msg)
+	}
+
+	worker := agent.NewAgent(agent.AgentConfig{
+		Logger:            logger.With().Str("component", "agent-worker").Logger(),
+		NodeID:            nodeID,
+		ControllerAddress: controllerAddress,
+		PrivateKey:        string(privateKeyBytes),
+	})
+
+	srv := agent.NewService(agent.ServiceConfig{
+		Logger: logger.With().Str("component", "service").Logger(),
+		Agent:  worker,
 	})
 
 	mux := http.NewServeMux()
@@ -81,7 +125,31 @@ func run() error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
+
+	go func() {
+		logger.Info().Msgf("starting periodic sync loop with frequency of %v", pollInterval)
+		ticker := time.NewTicker(pollInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				_, err := worker.Sync(&plantrv1.SyncRequest{})
+				if err != nil {
+					if errors.Is(err, agent.ErrSyncInProgressError) {
+						logger.Info().Msg("periodic sync aborted, sync already in progress")
+					} else {
+						logger.Err(err).Msg("error during periodic sync")
+					}
+				}
+			case <-ctx.Done():
+				logger.Info().Msg("context cancelled, ending periodic sync loop")
+				wg.Done()
+				return
+			}
+		}
+	}()
 
 	go func() {
 		s := <-sigChan
@@ -99,5 +167,6 @@ func run() error {
 		return err
 	}
 
+	wg.Wait()
 	return nil
 }
