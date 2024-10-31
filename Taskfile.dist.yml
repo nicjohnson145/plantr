@@ -32,6 +32,11 @@ tasks:
     cmds:
     - CGO_ENABLED=0 go build -o plantr-controller ./cmd/controller
 
+  build-agent:
+    desc: build the agent binary
+    cmds:
+    - CGO_ENABLED=0 go build -o plantr-agent ./cmd/agent
+
   run-controller:
     desc: run controller locally
     env:
@@ -46,6 +51,17 @@ tasks:
     cmds:
     - task: build-controller
     - ./plantr-controller
+
+  run-agent:
+    desc: run agent locally
+    env:
+      LOG_REQUESTS: "T"
+      LOG_RESPONSES: "T"
+      LOG_FORMAT: "human"
+      LOG_LEVEL: "trace"
+    cmds:
+    - task: build-agent
+    - ./plantr-agent
 
   jwt:
     desc: Generate a JWT
