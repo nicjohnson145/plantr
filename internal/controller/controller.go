@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,6 +12,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/golang-jwt/jwt"
+	"github.com/nicjohnson145/hlp/hashset"
 	hsqlx "github.com/nicjohnson145/hlp/sqlx"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 	"github.com/nicjohnson145/plantr/internal/encryption"
@@ -235,19 +237,71 @@ func (c *Controller) validateLogin(req *pbv1.LoginRequest) error {
 func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.GetSyncDataRequest]) (*connect.Response[pbv1.GetSyncDataReponse], error) {
 	token, err := interceptors.ClaimsFromCtx(ctx)
 	if err != nil {
-		return nil, err
+		return nil, c.logAndHandleError(err, "error getting token claims")
 	}
 
-	c.log.Info().Msgf("parsing sync data for %v", token.NodeID)
-	if err := c.ensureConfig(); err != nil {
-		return nil, c.logAndHandleError(err, "error ensuring config")
+	seeds, err := c.collectSeeds(token.NodeID)
+	if err != nil {
+		return nil, c.logAndHandleError(err, "error collecting seeds")
 	}
 
 	return connect.NewResponse(&pbv1.GetSyncDataReponse{
-		Seeds: []*pbv1.Seed{},
+		Seeds: seeds,
 	}), nil
 }
 
+func seedHash(x *pbv1.Seed) string {
+	var parts []string
+
+	switch concrete := x.Element.(type) {
+	case *pbv1.Seed_ConfigFile:
+		parts = []string{
+			"ConfigFile",
+			concrete.ConfigFile.TemplateContent,
+			concrete.ConfigFile.Destination,
+		}
+	case *pbv1.Seed_GithubReleaseBinary:
+		parts = []string{
+			"GithubReleaseBinary",
+			concrete.GithubReleaseBinary.RepoUrl,
+		}
+	default:
+		panic(fmt.Sprintf("unhandled seed type %T", concrete))
+	}
+
+	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, ""))))
+}
+
 func (c *Controller) collectSeeds(nodeID string) ([]*pbv1.Seed, error) {
-	return nil, nil
+	if err := c.ensureConfig(); err != nil {
+		return nil, fmt.Errorf("error ensuring config: %w", err)
+	}
+
+	c.log.Trace().Msg("finding node from config")
+	var node *pbv1.Node
+	for _, n := range c.config.Nodes {
+		if n.Id == nodeID {
+			node = n
+			break
+		}
+	}
+	if node == nil {
+		return nil, ErrUnknownNodeIDError
+	}
+
+	c.log.Trace().Msg("collecting seeds from defined roles")
+	seedSet := hashset.New(seedHash)
+	for _, roleName := range node.Roles {
+		c.log.Trace().Msgf("collecting from role %v", roleName)
+		role, ok := c.config.Roles[roleName]
+		if !ok {
+			return nil, fmt.Errorf("node %v references unknown role %v", nodeID, roleName)
+		}
+
+		for _, seed := range role.Seeds {
+			seedSet.Add(seed)
+		}
+	}
+
+	return seedSet.AsSlice(), nil
 }

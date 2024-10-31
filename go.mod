@@ -13,7 +13,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/go-cmp v0.6.0
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/nicjohnson145/hlp v0.6.0
+	github.com/nicjohnson145/hlp v0.7.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.19.0

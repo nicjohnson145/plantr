@@ -91,3 +91,150 @@ func TestController_Login(t *testing.T) {
 		require.Equal(t, wantToken, gotToken)
 	})
 }
+
+func TestController_CollectSeeds(t *testing.T) {
+	const (
+		nodeID = "some-node-id"
+	)
+
+	t.Run("basic deduplication smokes", func(t *testing.T) {
+		ctrl := newControllerWithConfig(
+			t,
+			ControllerConfig{},
+			&pbv1.Config{
+				Roles: map[string]*pbv1.Role{
+					"role-one": &pbv1.Role{
+						Seeds: []*pbv1.Seed{
+							{
+								Element: &pbv1.Seed_ConfigFile{
+									ConfigFile: &pbv1.ConfigFile{
+										TemplateContent: "template-one",
+										Destination:     "~/template-one",
+									},
+								},
+							},
+							{
+								Element: &pbv1.Seed_ConfigFile{
+									ConfigFile: &pbv1.ConfigFile{
+										TemplateContent: "template-two",
+										Destination:     "~/template-two",
+									},
+								},
+							},
+							{
+								Element: &pbv1.Seed_GithubReleaseBinary{
+									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
+										RepoUrl: "https://github.com/fake/binary-one",
+									},
+								},
+							},
+							{
+								Element: &pbv1.Seed_GithubReleaseBinary{
+									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
+										RepoUrl: "https://github.com/fake/binary-two",
+									},
+								},
+							},
+						},
+					},
+					"role-two": &pbv1.Role{
+						Seeds: []*pbv1.Seed{
+							{
+								Element: &pbv1.Seed_ConfigFile{
+									ConfigFile: &pbv1.ConfigFile{
+										TemplateContent: "template-two",
+										Destination:     "~/template-two",
+									},
+								},
+							},
+							{
+								Element: &pbv1.Seed_ConfigFile{
+									ConfigFile: &pbv1.ConfigFile{
+										TemplateContent: "template-three",
+										Destination:     "~/template-three",
+									},
+								},
+							},
+							{
+								Element: &pbv1.Seed_GithubReleaseBinary{
+									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
+										RepoUrl: "https://github.com/fake/binary-two",
+									},
+								},
+							},
+							{
+								Element: &pbv1.Seed_GithubReleaseBinary{
+									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
+										RepoUrl: "https://github.com/fake/binary-three",
+									},
+								},
+							},
+						},
+					},
+				},
+				Nodes: []*pbv1.Node{
+					{
+						Id:    nodeID,
+						Roles: []string{"role-one", "role-two"},
+					},
+				},
+			},
+		)
+
+		got, err := ctrl.collectSeeds(nodeID)
+		require.NoError(t, err)
+
+		require.ElementsMatch(
+			t,
+			[]*pbv1.Seed{
+				{
+					Element: &pbv1.Seed_ConfigFile{
+						ConfigFile: &pbv1.ConfigFile{
+							TemplateContent: "template-one",
+							Destination:     "~/template-one",
+						},
+					},
+				},
+				{
+					Element: &pbv1.Seed_ConfigFile{
+						ConfigFile: &pbv1.ConfigFile{
+							TemplateContent: "template-two",
+							Destination:     "~/template-two",
+						},
+					},
+				},
+				{
+					Element: &pbv1.Seed_ConfigFile{
+						ConfigFile: &pbv1.ConfigFile{
+							TemplateContent: "template-three",
+							Destination:     "~/template-three",
+						},
+					},
+				},
+				{
+					Element: &pbv1.Seed_GithubReleaseBinary{
+						GithubReleaseBinary: &pbv1.GithubReleaseBinary{
+							RepoUrl: "https://github.com/fake/binary-one",
+						},
+					},
+				},
+				{
+					Element: &pbv1.Seed_GithubReleaseBinary{
+						GithubReleaseBinary: &pbv1.GithubReleaseBinary{
+							RepoUrl: "https://github.com/fake/binary-two",
+						},
+					},
+				},
+				{
+					Element: &pbv1.Seed_GithubReleaseBinary{
+						GithubReleaseBinary: &pbv1.GithubReleaseBinary{
+							RepoUrl: "https://github.com/fake/binary-three",
+						},
+					},
+				},
+			},
+			got,
+		)
+	})
+
+}

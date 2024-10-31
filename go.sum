@@ -116,6 +116,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/nicjohnson145/hlp v0.6.0 h1:EEf3ggK47xvLAMER815LqKPNIJLOS0c4WoBPlZCF6Jk=
 github.com/nicjohnson145/hlp v0.6.0/go.mod h1:UhF3EOAaBkOKWtUrMrkc8tmKCanadTuwoMoU1BX8dKw=
+github.com/nicjohnson145/hlp v0.7.0 h1:d0jWotvtN2fsqZolcVf217M7ojHnMS2+ZOlNsxS9UcI=
+github.com/nicjohnson145/hlp v0.7.0/go.mod h1:daz4HTZ6Z8KsDCVpjaqskHuPQ3jankOvh3SjCxlIJmE=
 github.com/oklog/ulid/v2 v2.1.0 h1:+9lhoxAP56we25tyYETBBY1YLA2SaoLvUFgrP2miPJU=
 github.com/oklog/ulid/v2 v2.1.0/go.mod h1:rcEKHmBBKfef9DhnvX7y1HZBYxjXb0cP5ExxNsTT1QQ=
 github.com/onsi/gomega v1.34.1 h1:EUMJIKUjM8sKjYbtxQI9A4z2o+rruxnzNvpknOXie6k=
