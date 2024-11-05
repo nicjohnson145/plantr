@@ -14,12 +14,15 @@ import (
 const (
 	// GitKindGithub is a GitKind of type github.
 	GitKindGithub GitKind = "github"
+	// GitKindStatic is a GitKind of type static.
+	GitKindStatic GitKind = "static"
 )
 
 var ErrInvalidGitKind = fmt.Errorf("not a valid GitKind, try [%s]", strings.Join(_GitKindNames, ", "))
 
 var _GitKindNames = []string{
 	string(GitKindGithub),
+	string(GitKindStatic),
 }
 
 // GitKindNames returns a list of possible string values of GitKind.
@@ -43,6 +46,7 @@ func (x GitKind) IsValid() bool {
 
 var _GitKindValue = map[string]GitKind{
 	"github": GitKindGithub,
+	"static": GitKindStatic,
 }
 
 // ParseGitKind attempts to convert a string to a GitKind.

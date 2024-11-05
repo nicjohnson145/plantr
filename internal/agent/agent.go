@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,7 +13,10 @@ import (
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 	"github.com/nicjohnson145/plantr/gen/plantr/v1/plantrv1connect"
 	"github.com/nicjohnson145/plantr/internal/encryption"
+	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/rs/zerolog"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
@@ -24,16 +28,26 @@ type AgentConfig struct {
 	NodeID            string
 	PrivateKey        string
 	ControllerAddress string
+	NowFunc           func() time.Time
 }
 
 func NewAgent(conf AgentConfig) *Agent {
-	return &Agent{
+	a := &Agent{
 		log:               conf.Logger,
 		nodeID:            conf.NodeID,
 		privateKey:        conf.PrivateKey,
 		controllerAddress: conf.ControllerAddress,
 		mu:                &sync.Mutex{},
+		nowFunc:           conf.NowFunc,
 	}
+
+	if a.nowFunc == nil {
+		a.nowFunc = func() time.Time {
+			return time.Now().UTC()
+		}
+	}
+
+	return a
 }
 
 type Agent struct {
@@ -45,6 +59,7 @@ type Agent struct {
 
 	token           string
 	tokenExpiration time.Time
+	nowFunc         func() time.Time
 }
 
 func (a *Agent) logAndHandleError(err error, msg string) error {
@@ -59,6 +74,24 @@ func (a *Agent) logAndHandleError(err error, msg string) error {
 	default:
 		return err
 	}
+}
+
+func MarshallDebug(x any) {
+	var outBytes []byte
+	var err error
+	if protoMsg, ok := x.(protoreflect.ProtoMessage); ok {
+		opts := protojson.MarshalOptions{
+			Indent: "    ",
+		}
+		outBytes, err = opts.Marshal(protoMsg)
+	} else {
+		outBytes, err = json.MarshalIndent(x, "", "   ")
+	}
+	if err != nil {
+		fmt.Printf("Unable to marshall object for debugging: %v\n", err)
+		panic("unable to marshall")
+	}
+	fmt.Println("\n" + string(outBytes))
 }
 
 func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
@@ -76,13 +109,50 @@ func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 	if err != nil {
 		return nil, a.logAndHandleError(err, "error getting access token")
 	}
+	newCtx := interceptors.SetTokenOnContext(context.Background(), token)
 
-	_ = token
+	resp, err := client.GetSyncData(newCtx, connect.NewRequest(&pbv1.GetSyncDataRequest{}))
+	if err != nil {
+		return nil, a.logAndHandleError(err, "error getting sync data")
+	}
+
+	MarshallDebug(resp.Msg)
 
 	a.log.Info().Msg("sync completed successfully")
 	return nil, nil
 }
 
 func (a *Agent) getAccessToken(client plantrv1connect.ControllerServiceClient) (string, error) {
-	return "", nil
+	if a.token != "" && a.tokenExpiration.After(a.nowFunc().Add(5*time.Minute)) {
+		a.log.Debug().Msg("token still valid, reusing")
+		return a.token, nil
+	}
+
+	a.log.Debug().Msg("token missing or close/after expiration, attempting login")
+	resp, err := client.Login(context.Background(), connect.NewRequest(&pbv1.LoginRequest{
+		NodeId: a.nodeID,
+	}))
+	if err != nil {
+		return "", fmt.Errorf("error getting login challenge: %w", err)
+	}
+
+	challenge, err := encryption.DecryptValue(*resp.Msg.SealedChallenge, a.privateKey)
+	if err != nil {
+		return "", fmt.Errorf("error decrypting login challenge: %w", err)
+	}
+
+	resp, err = client.Login(context.Background(), connect.NewRequest(&pbv1.LoginRequest{
+		NodeId:         a.nodeID,
+		ChallengeId:    resp.Msg.ChallengeId,
+		ChallengeValue: &challenge,
+	}))
+	if err != nil {
+		return "", fmt.Errorf("error getting login token: %w", err)
+	}
+
+	a.token = *resp.Msg.Token
+	// TODO: actually unpack token and get its expiration
+	a.tokenExpiration = a.nowFunc().Add(24 * time.Hour)
+
+	return a.token, nil
 }

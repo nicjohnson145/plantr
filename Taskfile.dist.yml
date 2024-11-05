@@ -48,6 +48,10 @@ tasks:
       LOG_FORMAT: "human"
       GIT_URL: "https://github.com/nicjohnson145/plantr-test-repo"
       LOG_LEVEL: "trace"
+      GIT_TYPE: "static"
+    preconditions:
+    - sh: '[[ -n "${GIT_STATIC_CHECKOUT_PATH}" ]]'
+      msg: 'Must specify $GIT_STATIC_CHECKOUT_PATH'
     cmds:
     - task: build-controller
     - ./plantr-controller

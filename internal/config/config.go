@@ -18,6 +18,7 @@ type StorageKind string
 /*
 ENUM(
 github
+static
 )
 */
 type GitKind string
@@ -37,6 +38,8 @@ const (
 	GitType        = "git.type"
 	GitAccessToken = "git.access_token"
 	GitUrl         = "git.url"
+
+	GitStaticCheckoutPath = "git.static.checkout_path"
 
 	JWTSigningKey = "jwt.signing_key"
 	JWTDuration   = "jwt.duration"
