@@ -29,7 +29,6 @@ func marshallDebug(x any) {
 	}
 	if err != nil {
 		fmt.Printf("Unable to marshall object for debugging: %v\n", err)
-		panic("unable to marshall")
 	}
 	fmt.Println(string(outBytes))
 }
@@ -43,15 +42,17 @@ func NewLoggingInterceptor(logger zerolog.Logger, conf LoggingInterceptorConfig)
 	}
 	return connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			logger.Info().Msgf("request recieved for %v", req.Spec().Procedure)
+
 			if conf.LogRequests {
+				fmt.Println("request:")
 				marshallDebug(req.Any())
 			}
-
-			logger.Info().Msgf("request recieved for %v", req.Spec().Procedure)
 
 			resp, err := next(ctx, req)
 
 			if conf.LogResponses && err == nil {
+				fmt.Println("response:")
 				marshallDebug(resp.Any())
 			}
 

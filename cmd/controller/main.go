@@ -99,6 +99,7 @@ func run() error {
 				},
 			),
 			interceptors.NewAuthInterceptor(
+				logger,
 				[]byte(jwtKeyStr),
 				set.New(
 					"/plantr.v1.ControllerService/Login",

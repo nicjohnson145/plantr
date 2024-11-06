@@ -37,21 +37,28 @@ tasks:
     cmds:
     - CGO_ENABLED=0 go build -o plantr-agent ./cmd/agent
 
+  build-cli:
+    desc: build the cli
+    cmds:
+    - CGO_ENABLED=0 go build -o plantr ./cmd/cli
+
   run-controller:
     desc: run controller locally
     env:
       SQLITE_DB_PATH: "local.db"
       STORAGE_TYPE: "sqlite"
       JWT_SIGNING_KEY: "{{ .JWT_SIGNING_KEY }}"
-      LOG_REQUESTS: "T"
-      LOG_RESPONSES: "T"
+      #LOG_REQUESTS: "T"
+      #LOG_RESPONSES: "T"
       LOG_FORMAT: "human"
       GIT_URL: "https://github.com/nicjohnson145/plantr-test-repo"
       LOG_LEVEL: "trace"
       GIT_TYPE: "static"
+      GIT_STATIC_CHECKOUT_PATH:
+        sh: "echo ${CHECKOUT}"
     preconditions:
-    - sh: '[[ -n "${GIT_STATIC_CHECKOUT_PATH}" ]]'
-      msg: 'Must specify $GIT_STATIC_CHECKOUT_PATH'
+    - sh: '[[ -n "${CHECKOUT}" ]]'
+      msg: 'Must specify $CHECKOUT'
     cmds:
     - task: build-controller
     - ./plantr-controller
@@ -59,8 +66,8 @@ tasks:
   run-agent:
     desc: run agent locally
     env:
-      LOG_REQUESTS: "T"
-      LOG_RESPONSES: "T"
+      #LOG_REQUESTS: "T"
+      #LOG_RESPONSES: "T"
       LOG_FORMAT: "human"
       LOG_LEVEL: "trace"
       PRIVATE_KEY_PATH: "./hack/test-repo-keypairs/test-repo-key"

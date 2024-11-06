@@ -34,7 +34,6 @@ func (s *Static) GetLatestCommit(url string) (string, error) {
 }
 
 func (s *Static) CloneAtCommit(url string, commit string) (fs.FS, error) {
-	fmt.Println(s.checkoutPath)
 	return os.DirFS(s.checkoutPath), nil
 }
 

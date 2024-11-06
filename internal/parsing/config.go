@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"encoding/base64"
 
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 )
@@ -34,7 +35,22 @@ func ParseRepoFS(repoFS fs.FS) (*pbv1.Config, error) {
 		}
 	}
 
+	for _, node := range conf.Nodes {
+		parseNode(node)
+	}
+
 	return conf, nil
+}
+
+func parseNode(node *pbv1.Node) error {
+	// Decode the public key from b64
+	outBytes, err := base64.StdEncoding.DecodeString(node.PublicKey)
+	if err != nil {
+		return fmt.Errorf("error base64 decoding public key: %w", err)
+	}
+	node.PublicKey = string(outBytes)
+
+	return nil
 }
 
 func parseSeed(repoFS fs.FS, seed *pbv1.Seed) error {

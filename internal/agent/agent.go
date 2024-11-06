@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,8 +14,6 @@ import (
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/rs/zerolog"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
@@ -76,24 +73,6 @@ func (a *Agent) logAndHandleError(err error, msg string) error {
 	}
 }
 
-func MarshallDebug(x any) {
-	var outBytes []byte
-	var err error
-	if protoMsg, ok := x.(protoreflect.ProtoMessage); ok {
-		opts := protojson.MarshalOptions{
-			Indent: "    ",
-		}
-		outBytes, err = opts.Marshal(protoMsg)
-	} else {
-		outBytes, err = json.MarshalIndent(x, "", "   ")
-	}
-	if err != nil {
-		fmt.Printf("Unable to marshall object for debugging: %v\n", err)
-		panic("unable to marshall")
-	}
-	fmt.Println("\n" + string(outBytes))
-}
-
 func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 	if !a.mu.TryLock() {
 		return nil, ErrSyncInProgressError
@@ -104,19 +83,22 @@ func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 
 	a.log.Debug().Msg("fetching sync data")
 	client := plantrv1connect.NewControllerServiceClient(http.DefaultClient, a.controllerAddress)
-
 	token, err := a.getAccessToken(client)
 	if err != nil {
 		return nil, a.logAndHandleError(err, "error getting access token")
 	}
-	newCtx := interceptors.SetTokenOnContext(context.Background(), token)
 
-	resp, err := client.GetSyncData(newCtx, connect.NewRequest(&pbv1.GetSyncDataRequest{}))
+	client = plantrv1connect.NewControllerServiceClient(
+		http.DefaultClient,
+		a.controllerAddress,
+		connect.WithInterceptors(interceptors.NewClientAuthInterceptor(token)),
+	)
+	resp, err := client.GetSyncData(context.Background(), connect.NewRequest(&pbv1.GetSyncDataRequest{}))
 	if err != nil {
 		return nil, a.logAndHandleError(err, "error getting sync data")
 	}
 
-	MarshallDebug(resp.Msg)
+	_ = resp
 
 	a.log.Info().Msg("sync completed successfully")
 	return nil, nil

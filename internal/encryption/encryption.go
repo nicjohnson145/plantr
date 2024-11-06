@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
+	"encoding/base64"
 	"fmt"
 )
 
@@ -91,7 +92,7 @@ func EncryptValue(msg string, key string) (string, error) {
 		return "", fmt.Errorf("error encrypting: %w", err)
 	}
 
-	return string(cipher), nil
+	return base64.StdEncoding.EncodeToString(cipher), nil
 }
 
 func DecryptValue(cipher string, key string) (string, error) {
@@ -100,7 +101,12 @@ func DecryptValue(cipher string, key string) (string, error) {
 		return "", fmt.Errorf("error decoding as private key: %w", err)
 	}
 
-	msg, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privKey, []byte(cipher), nil)
+	cipherBytes, err := base64.StdEncoding.DecodeString(cipher)
+	if err != nil {
+		return "", fmt.Errorf("error decoding cipher from base64: %w", err)
+	}
+
+	msg, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privKey, cipherBytes, nil)
 	if err != nil {
 		return "", fmt.Errorf("error decrypting: %w", err)
 	}
