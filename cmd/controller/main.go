@@ -15,7 +15,7 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
 	"github.com/nicjohnson145/hlp/set"
-	"github.com/nicjohnson145/plantr/gen/plantr/v1/plantrv1connect"
+	"github.com/nicjohnson145/plantr/gen/plantr/controller/v1/controllerv1connect"
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/controller"
 	"github.com/nicjohnson145/plantr/internal/git"
@@ -64,7 +64,7 @@ func run() error {
 
 	// Reflection
 	reflector := grpcreflect.NewStaticReflector(
-		plantrv1connect.ControllerServiceName,
+		controllerv1connect.ControllerServiceName,
 	)
 
 	// Get the root configuration for the repo
@@ -88,7 +88,7 @@ func run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(plantrv1connect.NewControllerServiceHandler(
+	mux.Handle(controllerv1connect.NewControllerServiceHandler(
 		ctrl,
 		connect.WithInterceptors(
 			interceptors.NewLoggingInterceptor(

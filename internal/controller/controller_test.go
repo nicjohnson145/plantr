@@ -9,7 +9,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/golang-jwt/jwt"
 	"github.com/nicjohnson145/hlp"
-	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
+	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/storage"

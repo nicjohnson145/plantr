@@ -14,7 +14,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/nicjohnson145/hlp/hashset"
 	hsqlx "github.com/nicjohnson145/hlp/sqlx"
-	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
+	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
@@ -234,7 +234,7 @@ func (c *Controller) validateLogin(req *pbv1.LoginRequest) error {
 	return nil
 }
 
-func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.GetSyncDataRequest]) (*connect.Response[pbv1.GetSyncDataReponse], error) {
+func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.GetSyncDataRequest]) (*connect.Response[pbv1.GetSyncDataResponse], error) {
 	token, err := interceptors.ClaimsFromCtx(ctx)
 	if err != nil {
 		return nil, c.logAndHandleError(err, "error getting token claims")
@@ -247,7 +247,7 @@ func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.
 
 	_ = seeds
 
-	return connect.NewResponse(&pbv1.GetSyncDataReponse{}), nil
+	return connect.NewResponse(&pbv1.GetSyncDataResponse{}), nil
 }
 
 func seedHash(x *parsingv2.Seed) string {

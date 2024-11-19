@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"connectrpc.com/connect"
-	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
+	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/agent/v1"
 	"github.com/rs/zerolog"
 )
 

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package plantr.controller.v1;
+
+enum VersionType {
+  VERSION_TYPE_UNSPECIFIED = 0;
+  VERSION_TYPE_PINNED = 1;
+  VERSION_TYPE_LATEST = 2;
+}
+
+message ConfigFile {
+  string content = 1;
+  string destination = 2;
+}
+
+message Seed {
+  oneof element {
+    ConfigFile config_file = 1;
+  }
+}

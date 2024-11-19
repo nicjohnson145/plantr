@@ -14,8 +14,8 @@ import (
 
 	"connectrpc.com/connect"
 	"connectrpc.com/grpcreflect"
-	plantrv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
-	"github.com/nicjohnson145/plantr/gen/plantr/v1/plantrv1connect"
+	agentv1 "github.com/nicjohnson145/plantr/gen/plantr/agent/v1"
+	"github.com/nicjohnson145/plantr/gen/plantr/agent/v1/agentv1connect"
 	"github.com/nicjohnson145/plantr/internal/agent"
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
@@ -42,7 +42,7 @@ func run() error {
 
 	// Reflection
 	reflector := grpcreflect.NewStaticReflector(
-		plantrv1connect.AgentServiceName,
+		agentv1connect.AgentServiceName,
 	)
 
 	// Actual sync worker
@@ -92,7 +92,7 @@ func run() error {
 	})
 
 	mux := http.NewServeMux()
-	mux.Handle(plantrv1connect.NewAgentServiceHandler(
+	mux.Handle(agentv1connect.NewAgentServiceHandler(
 		srv,
 		connect.WithInterceptors(
 			interceptors.NewLoggingInterceptor(
@@ -135,7 +135,7 @@ func run() error {
 		for {
 			select {
 			case <-ticker.C:
-				_, err := worker.Sync(&plantrv1.SyncRequest{})
+				_, err := worker.Sync(&agentv1.SyncRequest{})
 				if err != nil {
 					if errors.Is(err, agent.ErrSyncInProgressError) {
 						logger.Info().Msg("periodic sync aborted, sync already in progress")

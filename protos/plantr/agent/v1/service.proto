@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package plantr.v1;
+package plantr.agent.v1;
 
 message SyncRequest {}
 

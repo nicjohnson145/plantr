@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
-	"github.com/nicjohnson145/plantr/gen/plantr/v1/plantrv1connect"
+	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/agent/v1"
+	controllerv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
+	"github.com/nicjohnson145/plantr/gen/plantr/controller/v1/controllerv1connect"
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/rs/zerolog"
@@ -82,18 +83,18 @@ func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 	a.log.Info().Msg("beginning sync")
 
 	a.log.Debug().Msg("fetching sync data")
-	client := plantrv1connect.NewControllerServiceClient(http.DefaultClient, a.controllerAddress)
+	client := controllerv1connect.NewControllerServiceClient(http.DefaultClient, a.controllerAddress)
 	token, err := a.getAccessToken(client)
 	if err != nil {
 		return nil, a.logAndHandleError(err, "error getting access token")
 	}
 
-	client = plantrv1connect.NewControllerServiceClient(
+	client = controllerv1connect.NewControllerServiceClient(
 		http.DefaultClient,
 		a.controllerAddress,
 		connect.WithInterceptors(interceptors.NewClientAuthInterceptor(token)),
 	)
-	resp, err := client.GetSyncData(context.Background(), connect.NewRequest(&pbv1.GetSyncDataRequest{}))
+	resp, err := client.GetSyncData(context.Background(), connect.NewRequest(&controllerv1.GetSyncDataRequest{}))
 	if err != nil {
 		return nil, a.logAndHandleError(err, "error getting sync data")
 	}
@@ -104,14 +105,14 @@ func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 	return nil, nil
 }
 
-func (a *Agent) getAccessToken(client plantrv1connect.ControllerServiceClient) (string, error) {
+func (a *Agent) getAccessToken(client controllerv1connect.ControllerServiceClient) (string, error) {
 	if a.token != "" && a.tokenExpiration.After(a.nowFunc().Add(5*time.Minute)) {
 		a.log.Debug().Msg("token still valid, reusing")
 		return a.token, nil
 	}
 
 	a.log.Debug().Msg("token missing or close/after expiration, attempting login")
-	resp, err := client.Login(context.Background(), connect.NewRequest(&pbv1.LoginRequest{
+	resp, err := client.Login(context.Background(), connect.NewRequest(&controllerv1.LoginRequest{
 		NodeId: a.nodeID,
 	}))
 	if err != nil {
@@ -123,7 +124,7 @@ func (a *Agent) getAccessToken(client plantrv1connect.ControllerServiceClient) (
 		return "", fmt.Errorf("error decrypting login challenge: %w", err)
 	}
 
-	resp, err = client.Login(context.Background(), connect.NewRequest(&pbv1.LoginRequest{
+	resp, err = client.Login(context.Background(), connect.NewRequest(&controllerv1.LoginRequest{
 		NodeId:         a.nodeID,
 		ChallengeId:    resp.Msg.ChallengeId,
 		ChallengeValue: &challenge,
