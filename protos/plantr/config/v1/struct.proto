@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package plantr.config.v1;
+
+message ConfigFile {
+  string path = 1;
+  string destination = 2;
+}
+
+message Seed {
+  oneof element {
+    ConfigFile config_file = 1;
+  }
+}
+
+message Role {
+  repeated Seed seeds = 1;
+}
+
+message Node {
+  string id = 1;
+  string hostname = 2;
+  string public_key_b64 = 3;
+  repeated string roles = 4;
+}
+
+message Config {
+  map<string, Role> roles = 1;
+  repeated Node nodes = 2;
+}

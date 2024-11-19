@@ -18,7 +18,7 @@ import (
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
-	"github.com/nicjohnson145/plantr/internal/parsing"
+	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/token"
 	"github.com/oklog/ulid/v2"
@@ -79,7 +79,7 @@ type Controller struct {
 	jwtDuration   time.Duration
 
 	mu     *sync.RWMutex
-	config *pbv1.Config
+	config *parsingv2.Config
 
 	nowFunc func() time.Time // for unit tests
 }
@@ -135,7 +135,7 @@ func (c *Controller) ensureConfig() error {
 	}
 
 	c.log.Trace().Msg("parsing config from cloned repo")
-	config, err := parsing.ParseRepoFS(repoFS)
+	config, err := parsingv2.ParseFS(repoFS)
 	if err != nil {
 		return fmt.Errorf("error parsing config: %w", err)
 	}
@@ -157,9 +157,9 @@ func (c *Controller) Login(ctx context.Context, req *connect.Request[pbv1.LoginR
 		return nil, c.logAndHandleError(err, "error ensuring config")
 	}
 
-	var node *pbv1.Node
+	var node *parsingv2.Node
 	for _, n := range c.config.Nodes {
-		if n.Id == req.Msg.NodeId {
+		if n.ID == req.Msg.NodeId {
 			node = n
 		}
 	}
@@ -245,25 +245,20 @@ func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.
 		return nil, c.logAndHandleError(err, "error collecting seeds")
 	}
 
-	return connect.NewResponse(&pbv1.GetSyncDataReponse{
-		Seeds: seeds,
-	}), nil
+	_ = seeds
+
+	return connect.NewResponse(&pbv1.GetSyncDataReponse{}), nil
 }
 
-func seedHash(x *pbv1.Seed) string {
+func seedHash(x *parsingv2.Seed) string {
 	var parts []string
 
 	switch concrete := x.Element.(type) {
-	case *pbv1.Seed_ConfigFile:
+	case *parsingv2.ConfigFile:
 		parts = []string{
 			"ConfigFile",
-			concrete.ConfigFile.TemplateContent,
-			concrete.ConfigFile.Destination,
-		}
-	case *pbv1.Seed_GithubReleaseBinary:
-		parts = []string{
-			"GithubReleaseBinary",
-			concrete.GithubReleaseBinary.RepoUrl,
+			concrete.TemplateContent,
+			concrete.Destination,
 		}
 	default:
 		panic(fmt.Sprintf("unhandled seed type %T", concrete))
@@ -272,15 +267,15 @@ func seedHash(x *pbv1.Seed) string {
 	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, ""))))
 }
 
-func (c *Controller) collectSeeds(nodeID string) ([]*pbv1.Seed, error) {
+func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
 	if err := c.ensureConfig(); err != nil {
 		return nil, fmt.Errorf("error ensuring config: %w", err)
 	}
 
 	c.log.Trace().Msg("finding node from config")
-	var node *pbv1.Node
+	var node *parsingv2.Node
 	for _, n := range c.config.Nodes {
-		if n.Id == nodeID {
+		if n.ID == nodeID {
 			node = n
 			break
 		}
@@ -293,12 +288,12 @@ func (c *Controller) collectSeeds(nodeID string) ([]*pbv1.Seed, error) {
 	seedSet := hashset.New(seedHash)
 	for _, roleName := range node.Roles {
 		c.log.Trace().Msgf("collecting from role %v", roleName)
-		role, ok := c.config.Roles[roleName]
+		seeds, ok := c.config.Roles[roleName]
 		if !ok {
 			return nil, fmt.Errorf("node %v references unknown role %v", nodeID, roleName)
 		}
 
-		for _, seed := range role.Seeds {
+		for _, seed := range seeds {
 			seedSet.Add(seed)
 		}
 	}

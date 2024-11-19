@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -10,13 +11,14 @@ import (
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/v1"
 	"github.com/nicjohnson145/plantr/internal/git"
+	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/token"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *pbv1.Config) *Controller {
+func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *parsingv2.Config) *Controller {
 	t.Helper()
 
 	if conf.GitClient == nil {
@@ -65,8 +67,8 @@ func TestController_Login(t *testing.T) {
 					return now
 				},
 			},
-			&pbv1.Config{
-				Nodes: []*pbv1.Node{{Id: nodeID}},
+			&parsingv2.Config{
+				Nodes: []*parsingv2.Node{{ID: nodeID}},
 			},
 		)
 
@@ -93,143 +95,35 @@ func TestController_Login(t *testing.T) {
 }
 
 func TestController_CollectSeeds(t *testing.T) {
-	const (
-		nodeID = "some-node-id"
-	)
-
 	t.Run("basic deduplication smokes", func(t *testing.T) {
 		ctrl := newControllerWithConfig(
 			t,
 			ControllerConfig{},
-			&pbv1.Config{
-				Roles: map[string]*pbv1.Role{
-					"role-one": &pbv1.Role{
-						Seeds: []*pbv1.Seed{
-							{
-								Element: &pbv1.Seed_ConfigFile{
-									ConfigFile: &pbv1.ConfigFile{
-										TemplateContent: "template-one",
-										Destination:     "~/template-one",
-									},
-								},
-							},
-							{
-								Element: &pbv1.Seed_ConfigFile{
-									ConfigFile: &pbv1.ConfigFile{
-										TemplateContent: "template-two",
-										Destination:     "~/template-two",
-									},
-								},
-							},
-							{
-								Element: &pbv1.Seed_GithubReleaseBinary{
-									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
-										RepoUrl: "https://github.com/fake/binary-one",
-									},
-								},
-							},
-							{
-								Element: &pbv1.Seed_GithubReleaseBinary{
-									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
-										RepoUrl: "https://github.com/fake/binary-two",
-									},
-								},
-							},
-						},
-					},
-					"role-two": &pbv1.Role{
-						Seeds: []*pbv1.Seed{
-							{
-								Element: &pbv1.Seed_ConfigFile{
-									ConfigFile: &pbv1.ConfigFile{
-										TemplateContent: "template-two",
-										Destination:     "~/template-two",
-									},
-								},
-							},
-							{
-								Element: &pbv1.Seed_ConfigFile{
-									ConfigFile: &pbv1.ConfigFile{
-										TemplateContent: "template-three",
-										Destination:     "~/template-three",
-									},
-								},
-							},
-							{
-								Element: &pbv1.Seed_GithubReleaseBinary{
-									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
-										RepoUrl: "https://github.com/fake/binary-two",
-									},
-								},
-							},
-							{
-								Element: &pbv1.Seed_GithubReleaseBinary{
-									GithubReleaseBinary: &pbv1.GithubReleaseBinary{
-										RepoUrl: "https://github.com/fake/binary-three",
-									},
-								},
-							},
-						},
-					},
-				},
-				Nodes: []*pbv1.Node{
-					{
-						Id:    nodeID,
-						Roles: []string{"role-one", "role-two"},
-					},
-				},
-			},
+			hlp.Must(parsingv2.ParseFS(os.DirFS("./testdata/collect-seeds/basic"))),
 		)
 
-		got, err := ctrl.collectSeeds(nodeID)
+		got, err := ctrl.collectSeeds("01JD340PST4R6PY8EDZ5JW127T")
 		require.NoError(t, err)
 
 		require.ElementsMatch(
 			t,
-			[]*pbv1.Seed{
+			[]*parsingv2.Seed{
 				{
-					Element: &pbv1.Seed_ConfigFile{
-						ConfigFile: &pbv1.ConfigFile{
-							TemplateContent: "template-one",
-							Destination:     "~/template-one",
-						},
+					Element: &parsingv2.ConfigFile{
+						TemplateContent: "hello from template-one\n",
+						Destination:     "~/template-one",
 					},
 				},
 				{
-					Element: &pbv1.Seed_ConfigFile{
-						ConfigFile: &pbv1.ConfigFile{
-							TemplateContent: "template-two",
-							Destination:     "~/template-two",
-						},
+					Element: &parsingv2.ConfigFile{
+						TemplateContent: "hello from template-two\n",
+						Destination:     "~/template-two",
 					},
 				},
 				{
-					Element: &pbv1.Seed_ConfigFile{
-						ConfigFile: &pbv1.ConfigFile{
-							TemplateContent: "template-three",
-							Destination:     "~/template-three",
-						},
-					},
-				},
-				{
-					Element: &pbv1.Seed_GithubReleaseBinary{
-						GithubReleaseBinary: &pbv1.GithubReleaseBinary{
-							RepoUrl: "https://github.com/fake/binary-one",
-						},
-					},
-				},
-				{
-					Element: &pbv1.Seed_GithubReleaseBinary{
-						GithubReleaseBinary: &pbv1.GithubReleaseBinary{
-							RepoUrl: "https://github.com/fake/binary-two",
-						},
-					},
-				},
-				{
-					Element: &pbv1.Seed_GithubReleaseBinary{
-						GithubReleaseBinary: &pbv1.GithubReleaseBinary{
-							RepoUrl: "https://github.com/fake/binary-three",
-						},
+					Element: &parsingv2.ConfigFile{
+						TemplateContent: "hello from template-three\n",
+						Destination:     "~/template-three",
 					},
 				},
 			},
