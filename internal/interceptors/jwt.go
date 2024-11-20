@@ -71,6 +71,6 @@ func ClaimsFromCtx(ctx context.Context) (*token.Token, error) {
 	return tok, nil
 }
 
-func SetTokenOnContext(ctx context.Context, token string) context.Context {
-	return context.WithValue(ctx, tokenHeader, token)
+func SetTokenOnContext(ctx context.Context, token *token.Token) context.Context {
+	return context.WithValue(ctx, claimsKey, token)
 }

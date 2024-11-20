@@ -21,6 +21,7 @@ import (
 	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/storage"
+	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -49,16 +50,22 @@ func run() error {
 		return fmt.Errorf("must provide JWT signing key")
 	}
 
-	storage, storageCleanup, err := storage.NewFromEnv(logger)
+	storage, storageCleanup, err := storage.NewFromEnv(config.Component(logger, "storage"))
 	defer storageCleanup()
 	if err != nil {
 		logger.Err(err).Msg("error initializing storage client")
 		return err
 	}
 
-	gitClient, err := git.NewFromEnv(logger)
+	gitClient, err := git.NewFromEnv(config.Component(logger, "git"))
 	if err != nil {
 		logger.Err(err).Msg("error initializing git client")
+		return err
+	}
+
+	vaultClient, err := vault.NewFromEnv(config.Component(logger, "vault"))
+	if err != nil {
+		logger.Err(err).Msg("error initializing vault client")
 		return err
 	}
 
@@ -75,12 +82,13 @@ func run() error {
 	}
 
 	ctrl, err := controller.NewController(controller.ControllerConfig{
-		Logger:        logger,
+		Logger:        config.Component(logger, "service"),
 		StorageClient: storage,
 		GitClient:     gitClient,
 		RepoURL:       url,
 		JWTSigningKey: []byte(jwtKeyStr),
 		JWTDuration:   viper.GetDuration(config.JWTDuration),
+		VaultClient:   vaultClient,
 	})
 	if err != nil {
 		logger.Err(err).Msg("error initializing controller")

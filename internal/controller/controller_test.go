@@ -11,9 +11,11 @@ import (
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/git"
+	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/token"
+	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -131,4 +133,51 @@ func TestController_CollectSeeds(t *testing.T) {
 		)
 	})
 
+}
+
+func TestController_GetSyncData(t *testing.T) {
+	const (
+		nodeID = "some-node-id"
+	)
+
+	ctx := interceptors.SetTokenOnContext(context.Background(), &token.Token{
+		NodeID: nodeID,
+	})
+
+	t.Run("config smokes", func(t *testing.T) {
+		ctrl := newControllerWithConfig(
+			t,
+			ControllerConfig{
+				VaultClient: vault.NewNoop(vault.NoopConfig{}),
+			},
+			&parsingv2.Config{
+				Roles: map[string][]*parsingv2.Seed{
+					"foo": {
+						{Element: &parsingv2.ConfigFile{
+							TemplateContent: "Hello from {{ .Vault.foo }}",
+							Destination:     "~/foo/bar",
+						}},
+					},
+				},
+				Nodes: []*parsingv2.Node{
+					{ID: nodeID, Roles: []string{"foo"}},
+				},
+			},
+		)
+
+		got, err := ctrl.GetSyncData(ctx, connect.NewRequest(&pbv1.GetSyncDataRequest{}))
+		require.NoError(t, err)
+		require.Equal(
+			t,
+			connect.NewResponse(&pbv1.GetSyncDataResponse{
+				Seeds: []*pbv1.Seed{
+					{Element: &pbv1.Seed_ConfigFile{ConfigFile: &pbv1.ConfigFile{
+						Content:     "Hello from static-foo-value",
+						Destination: "~/foo/bar",
+					}}},
+				},
+			}),
+			got,
+		)
+	})
 }

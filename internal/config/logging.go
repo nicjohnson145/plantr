@@ -55,3 +55,7 @@ func Init(cfg *LoggingConfig) zerolog.Logger {
 
 	return logger
 }
+
+func Component(logger zerolog.Logger, component string) zerolog.Logger {
+	return logger.With().Str("component", component).Logger()
+}

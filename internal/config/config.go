@@ -48,6 +48,9 @@ const (
 	PrivateKeyPath    = "private_key.path"
 	NodeID            = "node.id"
 	AgentPollInterval = "agent.poll_interval"
+
+	VaultEnabled          = "vault.enabled"
+	VaultHashicorpAddress = "vault.hashicorp.address"
 )
 
 var (
@@ -67,6 +70,8 @@ var (
 	DefaultJWTDuration = "240h" // 10 days
 
 	DefaultAgentPollInterval = "60s"
+
+	DefaultVaultEnabled = false
 )
 
 func InitConfig() {
@@ -86,6 +91,8 @@ func InitConfig() {
 	viper.SetDefault(JWTDuration, DefaultJWTDuration)
 
 	viper.SetDefault(AgentPollInterval, DefaultAgentPollInterval)
+
+	viper.SetDefault(VaultEnabled, DefaultVaultEnabled)
 
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"crypto/md5"
 	"errors"
 	"fmt"
 	"strings"
+	"text/template"
 	"time"
 
 	"sync"
@@ -21,7 +23,9 @@ import (
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/token"
+	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/oklog/ulid/v2"
+	"github.com/qdm12/reprint"
 	"github.com/rs/zerolog"
 )
 
@@ -41,6 +45,7 @@ type ControllerConfig struct {
 	RepoURL       string
 	JWTSigningKey []byte
 	JWTDuration   time.Duration
+	VaultClient   vault.Client
 
 	NowFunc func() time.Time // for unit tests
 }
@@ -58,7 +63,9 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		jwtSigningKey: conf.JWTSigningKey,
 		jwtDuration:   conf.JWTDuration,
 		nowFunc:       conf.NowFunc,
-		mu:            &sync.RWMutex{},
+		vault:         conf.VaultClient,
+		configMu:      &sync.RWMutex{},
+		vaultMu:       &sync.RWMutex{},
 	}
 
 	if ctrl.nowFunc == nil {
@@ -77,9 +84,13 @@ type Controller struct {
 	repoUrl       string
 	jwtSigningKey []byte
 	jwtDuration   time.Duration
+	vault         vault.Client
 
-	mu     *sync.RWMutex
-	config *parsingv2.Config
+	configMu *sync.RWMutex
+	config   *parsingv2.Config
+
+	vaultMu   *sync.RWMutex
+	vaultData *vaultData
 
 	nowFunc func() time.Time // for unit tests
 }
@@ -140,11 +151,64 @@ func (c *Controller) ensureConfig() error {
 		return fmt.Errorf("error parsing config: %w", err)
 	}
 
-	c.mu.Lock()
+	c.configMu.Lock()
 	c.config = config
-	c.mu.Unlock()
+	c.configMu.Unlock()
 
 	return nil
+}
+
+func (c *Controller) cloneConfig() (*parsingv2.Config, error) {
+	c.configMu.RLock()
+	defer c.configMu.RUnlock()
+
+	out := &parsingv2.Config{}
+	if err := reprint.FromTo(c.config, out); err != nil {
+		return nil, fmt.Errorf("error cloning config: %w", err)
+	}
+	return out, nil
+}
+
+func (c *Controller) ensureVault() error {
+	c.vaultMu.Lock()
+	defer c.vaultMu.Unlock()
+
+	c.log.Trace().Msg("getting latest secret version")
+	latest, err := c.vault.GetSecretVersion()
+	if err != nil {
+		return fmt.Errorf("error getting latest secret version: %w", err)
+	}
+
+	if c.vaultData != nil && c.vaultData.Version == latest {
+		c.log.Debug().Msg("vautl data already at latest version, nothing to do")
+		return nil
+	}
+
+	c.log.Trace().Msg("fetching secret data")
+	data, err := c.vault.ReadSecretData()
+	if err != nil {
+		return fmt.Errorf("error reading secret data: %w", err)
+	}
+
+	if c.vaultData == nil {
+		c.vaultData = &vaultData{}
+	}
+	c.vaultData.Version = latest
+	c.vaultData.Data = data
+
+	return nil
+}
+
+func (c *Controller) cloneVaultData() (map[string]any, error) {
+	c.vaultMu.RLock()
+	defer c.vaultMu.RUnlock()
+
+	out := map[string]any{}
+	if err := reprint.FromTo(c.vaultData.Data, &out); err != nil {
+		return nil, fmt.Errorf("error cloning vault data: %w", err)
+	}
+
+	return out, nil
 }
 
 func (c *Controller) Login(ctx context.Context, req *connect.Request[pbv1.LoginRequest]) (*connect.Response[pbv1.LoginResponse], error) {
@@ -156,9 +220,13 @@ func (c *Controller) Login(ctx context.Context, req *connect.Request[pbv1.LoginR
 	if err := c.ensureConfig(); err != nil {
 		return nil, c.logAndHandleError(err, "error ensuring config")
 	}
+	conf, err := c.cloneConfig()
+	if err != nil {
+		return nil, c.logAndHandleError(err, "error cloning config")
+	}
 
 	var node *parsingv2.Node
-	for _, n := range c.config.Nodes {
+	for _, n := range conf.Nodes {
 		if n.ID == req.Msg.NodeId {
 			node = n
 		}
@@ -245,9 +313,14 @@ func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.
 		return nil, c.logAndHandleError(err, "error collecting seeds")
 	}
 
-	_ = seeds
+	pbSeeds, err := c.renderSeeds(seeds)
+	if err != nil {
+		return nil, c.logAndHandleError(err, "error rendering seeds")
+	}
 
-	return connect.NewResponse(&pbv1.GetSyncDataResponse{}), nil
+	return connect.NewResponse(&pbv1.GetSyncDataResponse{
+		Seeds: pbSeeds,
+	}), nil
 }
 
 func seedHash(x *parsingv2.Seed) string {
@@ -271,10 +344,14 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
 	if err := c.ensureConfig(); err != nil {
 		return nil, fmt.Errorf("error ensuring config: %w", err)
 	}
+	conf, err := c.cloneConfig()
+	if err != nil {
+		return nil, fmt.Errorf("error cloning config: %w", err)
+	}
 
 	c.log.Trace().Msg("finding node from config")
 	var node *parsingv2.Node
-	for _, n := range c.config.Nodes {
+	for _, n := range conf.Nodes {
 		if n.ID == nodeID {
 			node = n
 			break
@@ -288,7 +365,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
 	seedSet := hashset.New(seedHash)
 	for _, roleName := range node.Roles {
 		c.log.Trace().Msgf("collecting from role %v", roleName)
-		seeds, ok := c.config.Roles[roleName]
+		seeds, ok := conf.Roles[roleName]
 		if !ok {
 			return nil, fmt.Errorf("node %v references unknown role %v", nodeID, roleName)
 		}
@@ -299,4 +376,57 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
 	}
 
 	return seedSet.AsSlice(), nil
+}
+
+func (c *Controller) renderSeeds(seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) {
+	// Do this once per render instead of once per config file
+	if err := c.ensureVault(); err != nil {
+		return nil, fmt.Errorf("error ensuring vault data: %w", err)
+	}
+	vaultData, err := c.cloneVaultData()
+	if err != nil {
+		return nil, fmt.Errorf("error cloning vault data: %w", err)
+	}
+
+	outSeeds := make([]*pbv1.Seed, len(seeds))
+	for i, seed := range seeds {
+		switch concrete := seed.Element.(type) {
+		case *parsingv2.ConfigFile:
+			out, err := c.renderSeed_configFile(concrete, vaultData)
+			if err != nil {
+				return nil, fmt.Errorf("error converting config file: %w", err)
+			}
+			outSeeds[i] = &pbv1.Seed{
+				Element: &pbv1.Seed_ConfigFile{
+					ConfigFile: out,
+				},
+			}
+		default:
+			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
+		}
+	}
+
+	return outSeeds, nil
+}
+
+func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, vaultData map[string]any) (*pbv1.ConfigFile, error) {
+	t, err := template.New("").Parse(file.TemplateContent)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing template: %w", err)
+	}
+
+	data := map[string]any{
+		"Vault": vaultData,
+	}
+
+	buf := &bytes.Buffer{}
+
+	if err := t.Execute(buf, data); err != nil {
+		return nil, fmt.Errorf("error rendering template: %w", err)
+	}
+
+	return &pbv1.ConfigFile{
+		Content:     buf.String(),
+		Destination: file.Destination,
+	}, nil
 }
