@@ -5,6 +5,8 @@ type Node struct {
 	Hostname  string
 	PublicKey string
 	Roles     []string
+	UserHome  string
+	BinDir    string
 }
 
 type Seed struct {

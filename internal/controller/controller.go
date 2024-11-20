@@ -308,12 +308,12 @@ func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.
 		return nil, c.logAndHandleError(err, "error getting token claims")
 	}
 
-	seeds, err := c.collectSeeds(token.NodeID)
+	seeds, node, err := c.collectSeeds(token.NodeID)
 	if err != nil {
 		return nil, c.logAndHandleError(err, "error collecting seeds")
 	}
 
-	pbSeeds, err := c.renderSeeds(seeds)
+	pbSeeds, err := c.renderSeeds(node, seeds)
 	if err != nil {
 		return nil, c.logAndHandleError(err, "error rendering seeds")
 	}
@@ -340,13 +340,13 @@ func seedHash(x *parsingv2.Seed) string {
 	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, "")))) //nolint: gosec // its a hash, it doesnt have to be cryptographically secure
 }
 
-func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
+func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, *parsingv2.Node, error) {
 	if err := c.ensureConfig(); err != nil {
-		return nil, fmt.Errorf("error ensuring config: %w", err)
+		return nil, nil, fmt.Errorf("error ensuring config: %w", err)
 	}
 	conf, err := c.cloneConfig()
 	if err != nil {
-		return nil, fmt.Errorf("error cloning config: %w", err)
+		return nil, nil, fmt.Errorf("error cloning config: %w", err)
 	}
 
 	c.log.Trace().Msg("finding node from config")
@@ -358,7 +358,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
 		}
 	}
 	if node == nil {
-		return nil, ErrUnknownNodeIDError
+		return nil, nil, ErrUnknownNodeIDError
 	}
 
 	c.log.Trace().Msg("collecting seeds from defined roles")
@@ -367,7 +367,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
 		c.log.Trace().Msgf("collecting from role %v", roleName)
 		seeds, ok := conf.Roles[roleName]
 		if !ok {
-			return nil, fmt.Errorf("node %v references unknown role %v", nodeID, roleName)
+			return nil, nil, fmt.Errorf("node %v references unknown role %v", nodeID, roleName)
 		}
 
 		for _, seed := range seeds {
@@ -375,10 +375,10 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {
 		}
 	}
 
-	return seedSet.AsSlice(), nil
+	return seedSet.AsSlice(), node, nil
 }
 
-func (c *Controller) renderSeeds(seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) {
+func (c *Controller) renderSeeds(node *parsingv2.Node, seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) {
 	// Do this once per render instead of once per config file
 	if err := c.ensureVault(); err != nil {
 		return nil, fmt.Errorf("error ensuring vault data: %w", err)
@@ -392,7 +392,7 @@ func (c *Controller) renderSeeds(seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) 
 	for i, seed := range seeds {
 		switch concrete := seed.Element.(type) {
 		case *parsingv2.ConfigFile:
-			out, err := c.renderSeed_configFile(concrete, vaultData)
+			out, err := c.renderSeed_configFile(concrete, node, vaultData)
 			if err != nil {
 				return nil, fmt.Errorf("error converting config file: %w", err)
 			}
@@ -409,7 +409,7 @@ func (c *Controller) renderSeeds(seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) 
 	return outSeeds, nil
 }
 
-func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, vaultData map[string]any) (*pbv1.ConfigFile, error) {
+func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *parsingv2.Node, vaultData map[string]any) (*pbv1.ConfigFile, error) {
 	t, err := template.New("").Parse(file.TemplateContent)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template: %w", err)
@@ -427,6 +427,6 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, vaultData
 
 	return &pbv1.ConfigFile{
 		Content:     buf.String(),
-		Destination: file.Destination,
+		Destination: strings.ReplaceAll(file.Destination, "~", node.UserHome),
 	}, nil
 }

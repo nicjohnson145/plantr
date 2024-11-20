@@ -104,7 +104,7 @@ func TestController_CollectSeeds(t *testing.T) {
 			hlp.Must(parsingv2.ParseFS(os.DirFS("./testdata/collect-seeds/basic"))),
 		)
 
-		got, err := ctrl.collectSeeds("01JD340PST4R6PY8EDZ5JW127T")
+		got, _, err := ctrl.collectSeeds("01JD340PST4R6PY8EDZ5JW127T")
 		require.NoError(t, err)
 
 		require.ElementsMatch(
@@ -160,7 +160,11 @@ func TestController_GetSyncData(t *testing.T) {
 					},
 				},
 				Nodes: []*parsingv2.Node{
-					{ID: nodeID, Roles: []string{"foo"}},
+					{
+						ID: nodeID,
+						Roles: []string{"foo"},
+						UserHome: "/home/fake-user",
+					},
 				},
 			},
 		)
@@ -173,7 +177,7 @@ func TestController_GetSyncData(t *testing.T) {
 				Seeds: []*pbv1.Seed{
 					{Element: &pbv1.Seed_ConfigFile{ConfigFile: &pbv1.ConfigFile{
 						Content:     "Hello from static-foo-value",
-						Destination: "~/foo/bar",
+						Destination: "/home/fake-user/foo/bar",
 					}}},
 				},
 			}),

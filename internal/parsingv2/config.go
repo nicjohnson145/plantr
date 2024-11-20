@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"path/filepath"
 
 	"buf.build/go/protoyaml"
+	"github.com/nicjohnson145/hlp"
 	configv1 "github.com/nicjohnson145/plantr/gen/plantr/config/v1"
 )
 
@@ -18,6 +20,7 @@ var (
 
 	ErrNodeNoIDError            = errors.New("id is required")
 	ErrNodeNoPulblicKeyError    = errors.New("public_key_b64 is required")
+	ErrNodeNoUserHomeError      = errors.New("user_home is required")
 	ErrNodePublicKeyDecodeError = errors.New("error decoding public key")
 )
 
@@ -69,6 +72,9 @@ func parseNode(node *configv1.Node) (*Node, error) {
 	if node.PublicKeyB64 == "" {
 		return nil, ErrNodeNoPulblicKeyError
 	}
+	if node.UserHome == "" {
+		return nil, ErrNodeNoUserHomeError
+	}
 
 	pubKeyBytes, err := base64.StdEncoding.DecodeString(node.PublicKeyB64)
 	if err != nil {
@@ -80,6 +86,8 @@ func parseNode(node *configv1.Node) (*Node, error) {
 		Hostname:  node.Hostname,
 		PublicKey: string(pubKeyBytes),
 		Roles:     node.Roles,
+		UserHome:  node.UserHome,
+		BinDir:    hlp.Ternary(node.BinDir == "", filepath.Join(node.UserHome, "bin"), node.BinDir),
 	}, nil
 }
 

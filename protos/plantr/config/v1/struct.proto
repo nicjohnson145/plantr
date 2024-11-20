@@ -22,6 +22,8 @@ message Node {
   string hostname = 2;
   string public_key_b64 = 3;
   repeated string roles = 4;
+  string user_home = 5;
+  string bin_dir = 6;
 }
 
 message Config {
