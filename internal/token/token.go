@@ -2,6 +2,7 @@ package token
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -32,4 +33,18 @@ func ParseJWT(tokenStr string, signingKey []byte) (*Token, error) {
 	}
 
 	return token.Claims.(*Token), nil
+}
+
+func ExtractExpiration(tokenStr string) (time.Time, error) {
+	token, _, err := new(jwt.Parser).ParseUnverified(tokenStr, Token{})
+	if err != nil {
+		return time.Time{}, fmt.Errorf("error parsing jwt: %w", err)
+	}
+
+	claims, ok := token.Claims.(*Token)
+	if !ok {
+		return time.Time{}, fmt.Errorf("unable to cast claims to *Token")
+	}
+
+	return time.Unix(claims.ExpiresAt, 0), nil
 }
