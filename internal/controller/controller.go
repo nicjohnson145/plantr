@@ -3,7 +3,7 @@ package controller
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
+	"crypto/md5" //nolint: gosec // its used for hashing, it doesnt have to be cryptographically secure
 	"errors"
 	"fmt"
 	"strings"
@@ -337,7 +337,7 @@ func seedHash(x *parsingv2.Seed) string {
 		panic(fmt.Sprintf("unhandled seed type %T", concrete))
 	}
 
-	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, ""))))
+	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, "")))) //nolint: gosec // its a hash, it doesnt have to be cryptographically secure
 }
 
 func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, error) {

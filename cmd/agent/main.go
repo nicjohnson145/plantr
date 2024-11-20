@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -50,7 +49,7 @@ func run() error {
 	if keyPath == "" {
 		msg := "private key path must be set"
 		logger.Error().Msg(msg)
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	}
 	privateKeyBytes, err := os.ReadFile(keyPath)
 	if err != nil {
@@ -62,21 +61,21 @@ func run() error {
 	if controllerAddress == "" {
 		msg := "controller address must be set"
 		logger.Error().Msg(msg)
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	}
 
 	nodeID := viper.GetString(config.NodeID)
 	if nodeID == "" {
 		msg := "node id must be set"
 		logger.Error().Msg(msg)
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	}
 
 	pollInterval := viper.GetDuration(config.AgentPollInterval)
 	if pollInterval.Seconds() == 0 {
 		msg := "poll interval must be set"
 		logger.Error().Msg(msg)
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	}
 
 	worker := agent.NewAgent(agent.AgentConfig{

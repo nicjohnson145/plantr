@@ -16,8 +16,9 @@ var (
 	ErrCannotCastClaimsError = errors.New("context value not *token.Token")
 )
 
+type claimsKey struct{}
+
 const (
-	claimsKey   = "jwt-claims"
 	tokenHeader = "authorization"
 )
 
@@ -43,7 +44,7 @@ func NewAuthInterceptor(logger zerolog.Logger, signingKey []byte, excludedMethod
 			}
 
 			// Add the parsed token to the context
-			return next(context.WithValue(ctx, claimsKey, token), req)
+			return next(context.WithValue(ctx, claimsKey{}, token), req)
 		})
 	})
 }
@@ -58,7 +59,7 @@ func NewClientAuthInterceptor(token string) connect.UnaryInterceptorFunc {
 }
 
 func ClaimsFromCtx(ctx context.Context) (*token.Token, error) {
-	val := ctx.Value(claimsKey)
+	val := ctx.Value(claimsKey{})
 	if val == nil {
 		return nil, ErrNoClaimsError
 	}
@@ -72,5 +73,5 @@ func ClaimsFromCtx(ctx context.Context) (*token.Token, error) {
 }
 
 func SetTokenOnContext(ctx context.Context, token *token.Token) context.Context {
-	return context.WithValue(ctx, claimsKey, token)
+	return context.WithValue(ctx, claimsKey{}, token)
 }

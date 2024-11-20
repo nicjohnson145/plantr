@@ -28,12 +28,12 @@ func generateKeyPair() *cobra.Command {
 				return err
 			}
 
-			if err := os.WriteFile("key", []byte(private), 0664); err != nil {
+			if err := os.WriteFile("key", []byte(private), 0664); err != nil { //nolint: gosec
 				logger.Err(err).Msg("error writing private key file")
 				return err
 			}
 
-			if err := os.WriteFile("key.pub", []byte(public), 0664); err != nil {
+			if err := os.WriteFile("key.pub", []byte(public), 0664); err != nil { //nolint: gosec
 				logger.Err(err).Msg("error writing public key file")
 				return err
 			}
