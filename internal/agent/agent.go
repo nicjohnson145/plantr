@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -99,7 +101,9 @@ func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 		return nil, a.logAndHandleError(err, "error getting sync data")
 	}
 
-	_ = resp
+	if err := a.executeSeeds(resp.Msg.Seeds); err != nil {
+		return nil, a.logAndHandleError(err, "error executing seeds")
+	}
 
 	a.log.Info().Msg("sync completed successfully")
 	return nil, nil
@@ -138,4 +142,33 @@ func (a *Agent) getAccessToken(client controllerv1connect.ControllerServiceClien
 	a.tokenExpiration = a.nowFunc().Add(24 * time.Hour)
 
 	return a.token, nil
+}
+
+func (a *Agent) executeSeeds(seeds []*controllerv1.Seed) error {
+	var errs []error
+
+	for _, seed := range seeds {
+		switch concrete := seed.Element.(type) {
+		case *controllerv1.Seed_ConfigFile:
+			if err := a.executeSeed_configFile(concrete.ConfigFile); err != nil {
+				errs = append(errs, fmt.Errorf("error executing config file: %w", err))
+			}
+		default:
+			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+func (a *Agent) executeSeed_configFile(seed *controllerv1.ConfigFile) error {
+	// TODO: inventory tracking
+	if err := os.MkdirAll(filepath.Dir(seed.Destination), 0775); err != nil {
+		return fmt.Errorf("error creating containing dir: %w", err)
+	}
+	// TODO: configurable permissions
+	if err := os.WriteFile(seed.Destination, []byte(seed.Content), 0644); err != nil {
+		return fmt.Errorf("error creating file: %w", err)
+	}
+	return nil
 }
