@@ -4,6 +4,9 @@ vars:
   JWT_SIGNING_KEY:
     sh: "echo ${JWT_SIGNING_KEY:-tZtdk2HM4YGrmplrguqw23oilOG1QKgVTAw9udHi}"
   YOUR_HOST_ID: "01JBFPFH91WRC352YPQD8P4NHE"
+  IMAGE_HOST: "ghcr.io/nicjohnson145"
+  CONTROLLER_BINARY: "plantr-controller"
+  AGENT_BINARY: "plantr-agent"
 
 tasks:
   migration:
@@ -30,12 +33,12 @@ tasks:
   build-controller:
     desc: build the controller binary
     cmds:
-    - CGO_ENABLED=0 go build -o plantr-controller ./cmd/controller
+    - CGO_ENABLED=0 go build -o {{ .CONTROLLER_BINARY }} ./cmd/controller
 
   build-agent:
     desc: build the agent binary
     cmds:
-    - CGO_ENABLED=0 go build -o plantr-agent ./cmd/agent
+    - CGO_ENABLED=0 go build -o {{ .AGENT_BINARY }} ./cmd/agent
 
   build-cli:
     desc: build the cli
@@ -83,3 +86,28 @@ tasks:
     cmds:
     - >
       jwt encode --secret "{{ .JWT_SIGNING_KEY }}" '{"node_id": "{{ .YOUR_HOST_ID }}"}'
+
+  docker:
+    desc: build all docker images
+    preconditions:
+    - sh: '[[ -n "${TAG}" ]]'
+      msg: Must specify $TAG
+    cmds:
+    - task: docker-controller
+    - task: docker-agent
+
+  docker-controller:
+    desc: build controller docker images
+    preconditions:
+    - sh: '[[ -n "${TAG}" ]]'
+      msg: Must specify $TAG
+    cmds:
+    - docker build . -t {{ .IMAGE_HOST }}/{{ .CONTROLLER_BINARY }}:$TAG --build-arg=TASK=build-controller --build-arg=BINARY_NAME={{ .CONTROLLER_BINARY }}
+
+  docker-agent:
+    desc: build agent docker images
+    preconditions:
+    - sh: '[[ -n "${TAG}" ]]'
+      msg: Must specify $TAG
+    cmds:
+    - docker build . -t {{ .IMAGE_HOST }}/{{ .AGENT_BINARY }}:$TAG --build-arg=TASK=build-agent --build-arg=BINARY_NAME={{ .AGENT_BINARY }}
