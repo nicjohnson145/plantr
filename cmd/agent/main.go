@@ -71,13 +71,6 @@ func run() error {
 		return errors.New(msg)
 	}
 
-	pollInterval := viper.GetDuration(config.AgentPollInterval)
-	if pollInterval.Seconds() == 0 {
-		msg := "poll interval must be set"
-		logger.Error().Msg(msg)
-		return errors.New(msg)
-	}
-
 	worker := agent.NewAgent(agent.AgentConfig{
 		Logger:            logger.With().Str("component", "agent-worker").Logger(),
 		NodeID:            nodeID,
@@ -124,40 +117,50 @@ func run() error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
 
-	go func() {
-		logger.Info().Msgf("starting periodic sync loop with frequency of %v", pollInterval)
-		ticker := time.NewTicker(pollInterval)
-		defer ticker.Stop()
+	pollInterval := viper.GetDuration(config.AgentPollInterval)
+	if pollInterval.Seconds() == 0 {
+		logger.Info().Msg("poll internal set to 0s, disabling background worker")
+	} else {
+		wg.Add(1)
+		go func() {
+			logger.Info().Msgf("starting periodic sync loop with frequency of %v", pollInterval)
+			ticker := time.NewTicker(pollInterval)
+			defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				_, err := worker.Sync(&agentv1.SyncRequest{})
-				if err != nil {
-					if errors.Is(err, agent.ErrSyncInProgressError) {
-						logger.Info().Msg("periodic sync aborted, sync already in progress")
-					} else {
-						logger.Err(err).Msg("error during periodic sync")
+			for {
+				select {
+				case <-ticker.C:
+					_, err := worker.Sync(&agentv1.SyncRequest{})
+					if err != nil {
+						if errors.Is(err, agent.ErrSyncInProgressError) {
+							logger.Info().Msg("periodic sync aborted, sync already in progress")
+						} else {
+							logger.Err(err).Msg("error during periodic sync")
+						}
 					}
+				case <-ctx.Done():
+					logger.Info().Msg("context cancelled, ending periodic sync loop")
+					wg.Done()
+					return
 				}
-			case <-ctx.Done():
-				logger.Info().Msg("context cancelled, ending periodic sync loop")
-				wg.Done()
-				return
 			}
-		}
-	}()
+		}()
+	}
 
+	wg.Add(1)
 	go func() {
-		s := <-sigChan
-		logger.Info().Msgf("got signal %v, attempting graceful shutdown", s)
-		dieCtx, dieCancel := context.WithTimeout(ctx, 10*time.Second)
-		defer dieCancel()
-		_ = svr.Shutdown(dieCtx)
-		cancel()
-		wg.Done()
+		select {
+		case s := <-sigChan:
+			logger.Info().Msgf("got signal %v, attempting graceful shutdown", s)
+			dieCtx, dieCancel := context.WithTimeout(ctx, 10*time.Second)
+			defer dieCancel()
+			_ = svr.Shutdown(dieCtx)
+			cancel()
+			wg.Done()
+		case <-ctx.Done():
+			wg.Done()
+		}
 	}()
 
 	logger.Info().Msgf("starting server on port %v", port)

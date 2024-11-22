@@ -7,6 +7,7 @@ vars:
   IMAGE_HOST: "ghcr.io/nicjohnson145"
   CONTROLLER_BINARY: "plantr-controller"
   AGENT_BINARY: "plantr-agent"
+  FUNCTIONAL_USER_HOME: "/tmp/plantr-tests"
 
 tasks:
   migration:
@@ -54,8 +55,8 @@ tasks:
       #LOG_REQUESTS: "T"
       #LOG_RESPONSES: "T"
       LOG_FORMAT: "human"
-      GIT_URL: "https://github.com/nicjohnson145/plantr-test-repo"
       LOG_LEVEL: "trace"
+      GIT_URL: "https://fake-url.example.com"
       GIT_TYPE: "static"
       GIT_STATIC_CHECKOUT_PATH:
         sh: "echo ${CHECKOUT}"
@@ -63,6 +64,8 @@ tasks:
     - sh: '[[ -n "${CHECKOUT}" ]]'
       msg: 'Must specify $CHECKOUT'
     cmds:
+    - rm -rf {{ .FUNCTIONAL_USER_HOME }}
+    - mkdir -p {{ .FUNCTIONAL_USER_HOME }}
     - task: build-controller
     - ./plantr-controller
 
@@ -77,6 +80,7 @@ tasks:
       NODE_ID: "{{ .YOUR_HOST_ID }}"
       PORT: "8090"
       CONTROLLER_ADDRESS: "http://localhost:8080"
+      AGENT_POLL_INTERVAL: "0s"
     cmds:
     - task: build-agent
     - ./plantr-agent

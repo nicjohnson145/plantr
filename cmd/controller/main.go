@@ -110,7 +110,7 @@ func run() error {
 				logger,
 				[]byte(jwtKeyStr),
 				set.New(
-					"/plantr.v1.ControllerService/Login",
+					"/plantr.controller.v1.ControllerService/Login",
 				),
 			),
 		),
