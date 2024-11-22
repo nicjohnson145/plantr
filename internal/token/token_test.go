@@ -7,6 +7,8 @@ import (
 )
 
 func TestTokenLoop(t *testing.T) {
+	t.Parallel()
+
 	token := Token{
 		NodeID: "some-id",
 	}

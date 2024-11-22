@@ -45,6 +45,8 @@ func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *pa
 }
 
 func TestController_Login(t *testing.T) {
+	t.Parallel()
+
 	var (
 		nodeID         = "some-node-id"
 		challengeID    = "some-challenge-id"
@@ -54,6 +56,8 @@ func TestController_Login(t *testing.T) {
 	)
 
 	t.Run("happy path - post challenge", func(t *testing.T) {
+		t.Parallel()
+
 		store := storage.NewMockClient(t)
 		store.
 			EXPECT().
@@ -97,7 +101,11 @@ func TestController_Login(t *testing.T) {
 }
 
 func TestController_CollectSeeds(t *testing.T) {
+	t.Parallel()
+
 	t.Run("basic deduplication smokes", func(t *testing.T) {
+		t.Parallel()
+
 		ctrl := newControllerWithConfig(
 			t,
 			ControllerConfig{},
@@ -136,6 +144,8 @@ func TestController_CollectSeeds(t *testing.T) {
 }
 
 func TestController_GetSyncData(t *testing.T) {
+	t.Parallel()
+
 	const (
 		nodeID = "some-node-id"
 	)
@@ -145,6 +155,8 @@ func TestController_GetSyncData(t *testing.T) {
 	})
 
 	t.Run("config smokes", func(t *testing.T) {
+		t.Parallel()
+
 		ctrl := newControllerWithConfig(
 			t,
 			ControllerConfig{

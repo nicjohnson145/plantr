@@ -7,6 +7,8 @@ import (
 )
 
 func TestGithub_ParseUrl(t *testing.T) {
+	t.Parallel()
+
 	testData := []struct {
 		name  string
 		url   string
@@ -28,6 +30,8 @@ func TestGithub_ParseUrl(t *testing.T) {
 	}
 	for _, tc := range testData {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			owner, repo, err := (&Github{}).parseUrl(tc.url)
 			require.NoError(t, err)
 			require.Equal(t, tc.owner, owner)

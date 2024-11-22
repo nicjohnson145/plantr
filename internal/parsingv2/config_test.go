@@ -8,7 +8,10 @@ import (
 )
 
 func TestParseFS(t *testing.T) {
+	t.Parallel()
+
 	t.Run("smokes", func(t *testing.T) {
+		t.Parallel()
 		_, err := ParseFS(os.DirFS("./testdata/basic"))
 		require.NoError(t, err)
 	})
