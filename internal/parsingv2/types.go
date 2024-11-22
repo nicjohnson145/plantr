@@ -13,12 +13,25 @@ type Seed struct {
 	Element any
 }
 
+type Config struct {
+	Roles map[string][]*Seed
+	Nodes []*Node
+}
+
 type ConfigFile struct {
 	TemplateContent string
 	Destination     string
 }
 
-type Config struct {
-	Roles map[string][]*Seed
-	Nodes []*Node
+type GithubRelease struct {
+	Repo          string
+	AssetPatterns map[string]map[string]string
+}
+
+func (g *GithubRelease) GetAssetPattern(os string, arch string) string {
+	archMap, ok := g.AssetPatterns[os]
+	if !ok {
+		return ""
+	}
+	return archMap[arch]
 }

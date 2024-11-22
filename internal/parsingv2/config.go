@@ -22,6 +22,8 @@ var (
 	ErrNodeNoPulblicKeyError    = errors.New("public_key_b64 is required")
 	ErrNodeNoUserHomeError      = errors.New("user_home is required")
 	ErrNodePublicKeyDecodeError = errors.New("error decoding public key")
+
+	ErrGithubReleaseNoRepoError = errors.New("repo is required")
 )
 
 func ParseFS(fsys fs.FS) (*Config, error) {
@@ -101,6 +103,14 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 				return nil, fmt.Errorf("error parsing item %v: %w", i, err)
 			}
 			outSeeds[i] = seed
+		case *configv1.Seed_GithubRelease:
+			seed, err := parseSeed_githubRelease(concrete.GithubRelease)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing item %v: %w", i, err)
+			}
+			outSeeds[i] = seed
+		default:
+			return nil, fmt.Errorf("unhandled seed type %T", concrete)
 		}
 	}
 
@@ -124,6 +134,41 @@ func parseSeed_configFile(fsys fs.FS, file *configv1.ConfigFile) (*Seed, error) 
 		Element: &ConfigFile{
 			TemplateContent: string(tmplBytes),
 			Destination:     file.Destination,
+		},
+	}, nil
+}
+
+func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
+	if release.Repo == "" {
+		return nil, ErrGithubReleaseNoRepoError
+	}
+
+	setArchPatterns := func(m map[string]string, patterns *configv1.GithubRelease_AssetPattern_ArchPattern) {
+		if patterns.X86 != "" {
+			m["amd64"] = patterns.X86
+		}
+		if patterns.Arm != "" {
+			m["arm64"] = patterns.Arm
+		}
+	}
+
+	assetPatterns := map[string]map[string]string{}
+
+	if release.AssetPatterns != nil {
+		if release.AssetPatterns.Linux != nil {
+			assetPatterns["linux"] = map[string]string{}
+			setArchPatterns(assetPatterns["linux"], release.AssetPatterns.Linux)
+		}
+		if release.AssetPatterns.Mac != nil {
+			assetPatterns["darwin"] = map[string]string{}
+			setArchPatterns(assetPatterns["darwin"], release.AssetPatterns.Mac)
+		}
+	}
+
+	return &Seed{
+		Element: &GithubRelease{
+			Repo:          release.Repo,
+			AssetPatterns: assetPatterns,
 		},
 	}, nil
 }

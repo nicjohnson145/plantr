@@ -333,6 +333,11 @@ func seedHash(x *parsingv2.Seed) string {
 			concrete.TemplateContent,
 			concrete.Destination,
 		}
+	case *parsingv2.GithubRelease:
+		parts = []string{
+			"GithubRelease",
+			concrete.Repo,
+		}
 	default:
 		panic(fmt.Sprintf("unhandled seed type %T", concrete))
 	}
@@ -401,6 +406,16 @@ func (c *Controller) renderSeeds(node *parsingv2.Node, seeds []*parsingv2.Seed) 
 					ConfigFile: out,
 				},
 			}
+		case *parsingv2.GithubRelease:
+			out, err := c.renderSeed_githubRelease(concrete, node)
+			if err != nil {
+				return nil, fmt.Errorf("error converting github release: %w", err)
+			}
+			outSeeds[i] = &pbv1.Seed{
+				Element: &pbv1.Seed_GithubRelease{
+					GithubRelease: out,
+				},
+			}
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
 		}
@@ -428,5 +443,11 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *par
 	return &pbv1.ConfigFile{
 		Content:     buf.String(),
 		Destination: strings.ReplaceAll(file.Destination, "~", node.UserHome),
+	}, nil
+}
+
+func (c *Controller) renderSeed_githubRelease(release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.GithubRelease, error) {
+	return &pbv1.GithubRelease{
+		DownloadUrl: "https://fake-url.github.com",
 	}, nil
 }

@@ -13,8 +13,13 @@ message ConfigFile {
   string destination = 2;
 }
 
+message GithubRelease {
+  string download_url = 1;
+}
+
 message Seed {
   oneof element {
     ConfigFile config_file = 1;
+    GithubRelease github_release = 2;
   }
 }
