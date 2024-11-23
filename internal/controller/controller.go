@@ -6,6 +6,7 @@ import (
 	"crypto/md5" //nolint: gosec // its used for hashing, it doesnt have to be cryptographically secure
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"text/template"
 	"time"
@@ -39,13 +40,15 @@ var (
 )
 
 type ControllerConfig struct {
-	Logger        zerolog.Logger
-	GitClient     git.Client
-	StorageClient storage.Client
-	RepoURL       string
-	JWTSigningKey []byte
-	JWTDuration   time.Duration
-	VaultClient   vault.Client
+	Logger             zerolog.Logger
+	GitClient          git.Client
+	StorageClient      storage.Client
+	RepoURL            string
+	JWTSigningKey      []byte
+	JWTDuration        time.Duration
+	VaultClient        vault.Client
+	HttpClient         *http.Client
+	GithubReleaseToken string
 
 	NowFunc func() time.Time // for unit tests
 }
@@ -56,16 +59,18 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		repoUrl = repoUrl + ".git"
 	}
 	ctrl := &Controller{
-		log:           conf.Logger,
-		git:           conf.GitClient,
-		store:         conf.StorageClient,
-		repoUrl:       repoUrl,
-		jwtSigningKey: conf.JWTSigningKey,
-		jwtDuration:   conf.JWTDuration,
-		nowFunc:       conf.NowFunc,
-		vault:         conf.VaultClient,
-		configMu:      &sync.RWMutex{},
-		vaultMu:       &sync.RWMutex{},
+		log:                conf.Logger,
+		git:                conf.GitClient,
+		store:              conf.StorageClient,
+		repoUrl:            repoUrl,
+		jwtSigningKey:      conf.JWTSigningKey,
+		jwtDuration:        conf.JWTDuration,
+		nowFunc:            conf.NowFunc,
+		vault:              conf.VaultClient,
+		httpClient:         conf.HttpClient,
+		githubReleaseToken: conf.GithubReleaseToken,
+		configMu:           &sync.RWMutex{},
+		vaultMu:            &sync.RWMutex{},
 	}
 
 	if ctrl.nowFunc == nil {
@@ -78,13 +83,15 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 }
 
 type Controller struct {
-	log           zerolog.Logger
-	git           git.Client
-	store         storage.Client
-	repoUrl       string
-	jwtSigningKey []byte
-	jwtDuration   time.Duration
-	vault         vault.Client
+	log                zerolog.Logger
+	git                git.Client
+	store              storage.Client
+	repoUrl            string
+	jwtSigningKey      []byte
+	jwtDuration        time.Duration
+	vault              vault.Client
+	httpClient         *http.Client
+	githubReleaseToken string
 
 	configMu *sync.RWMutex
 	config   *parsingv2.Config
@@ -443,11 +450,5 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *par
 	return &pbv1.ConfigFile{
 		Content:     buf.String(),
 		Destination: strings.ReplaceAll(file.Destination, "~", node.UserHome),
-	}, nil
-}
-
-func (c *Controller) renderSeed_githubRelease(release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.GithubRelease, error) {
-	return &pbv1.GithubRelease{
-		DownloadUrl: "https://fake-url.github.com",
 	}, nil
 }

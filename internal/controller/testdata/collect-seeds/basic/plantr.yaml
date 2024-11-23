@@ -23,3 +23,5 @@ nodes:
   roles:
   - foo
   - bar
+  os: linux
+  arch: amd64

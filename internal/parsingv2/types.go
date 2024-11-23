@@ -1,5 +1,7 @@
 package parsingv2
 
+import "regexp"
+
 type Node struct {
 	ID        string
 	Hostname  string
@@ -7,6 +9,8 @@ type Node struct {
 	Roles     []string
 	UserHome  string
 	BinDir    string
+	OS        string
+	Arch      string
 }
 
 type Seed struct {
@@ -25,13 +29,14 @@ type ConfigFile struct {
 
 type GithubRelease struct {
 	Repo          string
-	AssetPatterns map[string]map[string]string
+	AssetPatterns map[string]map[string]*regexp.Regexp
+	Tag           string
 }
 
-func (g *GithubRelease) GetAssetPattern(os string, arch string) string {
+func (g *GithubRelease) GetAssetPattern(os string, arch string) *regexp.Regexp {
 	archMap, ok := g.AssetPatterns[os]
 	if !ok {
-		return ""
+		return nil
 	}
 	return archMap[arch]
 }

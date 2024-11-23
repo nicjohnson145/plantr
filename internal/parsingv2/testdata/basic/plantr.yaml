@@ -11,3 +11,5 @@ nodes:
   user_home: /home/fake-user
   roles:
   - foo
+  os: linux
+  arch: amd64

@@ -6,24 +6,18 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"regexp"
 
 	"buf.build/go/protoyaml"
+	"github.com/bufbuild/protovalidate-go"
 	"github.com/nicjohnson145/hlp"
 	configv1 "github.com/nicjohnson145/plantr/gen/plantr/config/v1"
 )
 
 var (
-	ErrParseError = errors.New("parse error")
-
-	ErrConfigFileNoPathError        = errors.New("path is required")
-	ErrConfigFileNoDestinationError = errors.New("destination is required")
-
-	ErrNodeNoIDError            = errors.New("id is required")
-	ErrNodeNoPulblicKeyError    = errors.New("public_key_b64 is required")
-	ErrNodeNoUserHomeError      = errors.New("user_home is required")
-	ErrNodePublicKeyDecodeError = errors.New("error decoding public key")
-
-	ErrGithubReleaseNoRepoError = errors.New("repo is required")
+	ErrParseError                     = errors.New("parse error")
+	ErrNodePublicKeyDecodeError       = errors.New("error decoding public key")
+	ErrGithubReleaseInvalidRegexError = errors.New("invalid regex")
 )
 
 func ParseFS(fsys fs.FS) (*Config, error) {
@@ -68,14 +62,8 @@ func parseFS(fsys fs.FS) (*Config, error) {
 }
 
 func parseNode(node *configv1.Node) (*Node, error) {
-	if node.Id == "" {
-		return nil, ErrNodeNoIDError
-	}
-	if node.PublicKeyB64 == "" {
-		return nil, ErrNodeNoPulblicKeyError
-	}
-	if node.UserHome == "" {
-		return nil, ErrNodeNoUserHomeError
+	if err := protovalidate.Validate(node); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
 	}
 
 	pubKeyBytes, err := base64.StdEncoding.DecodeString(node.PublicKeyB64)
@@ -118,11 +106,8 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 }
 
 func parseSeed_configFile(fsys fs.FS, file *configv1.ConfigFile) (*Seed, error) {
-	if file.Path == "" {
-		return nil, ErrConfigFileNoPathError
-	}
-	if file.Destination == "" {
-		return nil, ErrConfigFileNoDestinationError
+	if err := protovalidate.Validate(file); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
 	}
 
 	tmplBytes, err := fs.ReadFile(fsys, file.Path)
@@ -139,29 +124,45 @@ func parseSeed_configFile(fsys fs.FS, file *configv1.ConfigFile) (*Seed, error) 
 }
 
 func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
-	if release.Repo == "" {
-		return nil, ErrGithubReleaseNoRepoError
+	if err := protovalidate.Validate(release); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
 	}
 
-	setArchPatterns := func(m map[string]string, patterns *configv1.GithubRelease_AssetPattern_ArchPattern) {
-		if patterns.X86 != "" {
-			m["amd64"] = patterns.X86
-		}
-		if patterns.Arm != "" {
-			m["arm64"] = patterns.Arm
-		}
-	}
-
-	assetPatterns := map[string]map[string]string{}
-
+	assetPatterns := map[string]map[string]*regexp.Regexp{}
 	if release.AssetPatterns != nil {
 		if release.AssetPatterns.Linux != nil {
-			assetPatterns["linux"] = map[string]string{}
-			setArchPatterns(assetPatterns["linux"], release.AssetPatterns.Linux)
+			assetPatterns["linux"] = map[string]*regexp.Regexp{}
+			if release.AssetPatterns.Linux.Amd64 != "" {
+				pat, err := regexp.Compile(release.AssetPatterns.Linux.Amd64)
+				if err != nil {
+					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "linux", "amd64", err)
+				}
+				assetPatterns["linux"]["amd64"] = pat
+			}
+			if release.AssetPatterns.Linux.Arm64 != "" {
+				pat, err := regexp.Compile(release.AssetPatterns.Linux.Arm64)
+				if err != nil {
+					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "linux", "arm64", err)
+				}
+				assetPatterns["linux"]["arm64"] = pat
+			}
 		}
 		if release.AssetPatterns.Mac != nil {
-			assetPatterns["darwin"] = map[string]string{}
-			setArchPatterns(assetPatterns["darwin"], release.AssetPatterns.Mac)
+			assetPatterns["mac"] = map[string]*regexp.Regexp{}
+			if release.AssetPatterns.Mac.Amd64 != "" {
+				pat, err := regexp.Compile(release.AssetPatterns.Mac.Amd64)
+				if err != nil {
+					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "mac", "amd64", err)
+				}
+				assetPatterns["mac"]["amd64"] = pat
+			}
+			if release.AssetPatterns.Mac.Arm64 != "" {
+				pat, err := regexp.Compile(release.AssetPatterns.Mac.Arm64)
+				if err != nil {
+					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "mac", "arm64", err)
+				}
+				assetPatterns["mac"]["arm64"] = pat
+			}
 		}
 	}
 
@@ -169,6 +170,7 @@ func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
 		Element: &GithubRelease{
 			Repo:          release.Repo,
 			AssetPatterns: assetPatterns,
+			Tag:           release.Tag,
 		},
 	}, nil
 }
