@@ -1,7 +1,10 @@
 package main
 
 import (
+	"github.com/nicjohnson145/plantr/internal/cli"
+	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func generateKeyPair() *cobra.Command {
@@ -10,28 +13,20 @@ func generateKeyPair() *cobra.Command {
 		Short: "Generate a node keypair",
 		Long:  "Generate keys used for node authentication",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			//config.InitConfig()
+			cli.InitConfig()
 
-			//logger := logging.Init(&logging.LoggingConfig{
-			//    Level:  logging.LogLevel(viper.GetString(config.LoggingLevel)),
-			//    Format: logging.LogFormatHuman,
-			//})
+			logger := logging.Init(&logging.LoggingConfig{
+				Level:  logging.LogLevel(viper.GetString(cli.LoggingLevel)),
+				Format: logging.LogFormat(viper.GetString(cli.LoggingFormat)),
+			})
 
-			//public, private, err := encryption.GenerateKeyPair(&encryption.KeyOpts{})
-			//if err != nil {
-			//    logger.Err(err).Msg("error generating keypair")
-			//    return err
-			//}
+			c := cli.NewCLI(cli.CLIConfig{
+				Logger: logger,
+			})
 
-			//if err := os.WriteFile("key", []byte(private), 0664); err != nil { //nolint: gosec
-			//    logger.Err(err).Msg("error writing private key file")
-			//    return err
-			//}
-
-			//if err := os.WriteFile("key.pub", []byte(public), 0664); err != nil { //nolint: gosec
-			//    logger.Err(err).Msg("error writing public key file")
-			//    return err
-			//}
+			if err := c.GenerateKeyPair(); err != nil {
+				return err
+			}
 
 			return nil
 		},
