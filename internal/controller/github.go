@@ -1,4 +1,4 @@
-package git
+package controller
 
 import (
 	"context"
@@ -18,32 +18,32 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type GithubConfig struct {
+type GithubGitClientConfig struct {
 	Logger zerolog.Logger
 	Token string
 }
 
-func NewGithub(conf GithubConfig) (*Github, error) {
+func NewGithubGitClient(conf GithubGitClientConfig) (*GithubGitClient, error) {
 	if conf.Token == "" {
 		return nil, fmt.Errorf("token is required")
 	}
 
-	return &Github{
+	return &GithubGitClient{
 		log:   conf.Logger,
 		token: conf.Token,
 	}, nil
 }
 
-var _ Client = (*Github)(nil)
+var _ GitClient = (*GithubGitClient)(nil)
 
-type Github struct {
+type GithubGitClient struct {
 	log    zerolog.Logger
 	client *http.Client
 
 	token string
 }
 
-func (g *Github) parseUrl(url string) (string, string, error) {
+func (g *GithubGitClient) parseUrl(url string) (string, string, error) {
 	exp := regexp.MustCompile(`^(https://github.com/|git@github.com:)(?P<owner>[a-zA-Z0-9_\-]+)/(?P<repo>[a-zA-Z0-9_\-]+).git`)
 	got := hlp.ExtractNamedMatches(exp, exp.FindStringSubmatch(url))
 	if got["owner"] == "" {
@@ -55,7 +55,7 @@ func (g *Github) parseUrl(url string) (string, string, error) {
 	return got["owner"], got["repo"], nil
 }
 
-func (g *Github) GetLatestCommit(url string) (string, error) {
+func (g *GithubGitClient) GetLatestCommit(url string) (string, error) {
 	owner, repo, err := g.parseUrl(url)
 	if err != nil {
 		return "", fmt.Errorf("error parsing URL: %w", err)
@@ -87,7 +87,7 @@ func (g *Github) GetLatestCommit(url string) (string, error) {
 	return resp[0].SHA, nil
 }
 
-func (g *Github) CloneAtCommit(url string, commit string) (fs.FS, error) {
+func (g *GithubGitClient) CloneAtCommit(url string, commit string) (fs.FS, error) {
 	bfs := gmemfs.New()
 	r, err := git.Clone(memory.NewStorage(), bfs, &git.CloneOptions{
 		Auth: &ghttp.BasicAuth{
@@ -113,7 +113,7 @@ func (g *Github) CloneAtCommit(url string, commit string) (fs.FS, error) {
 	return iofs.New(bfs), nil
 }
 
-func (g *Github) GetLatestRelease(url string) (string, error) {
+func (g *GithubGitClient) GetLatestRelease(url string) (string, error) {
 	owner, repo, err := g.parseUrl(url)
 	if err != nil {
 		return "", fmt.Errorf("error parsing URL: %w", err)

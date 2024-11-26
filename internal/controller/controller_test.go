@@ -10,7 +10,6 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
-	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/storage"
@@ -24,7 +23,7 @@ func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *pa
 	t.Helper()
 
 	if conf.GitClient == nil {
-		conf.GitClient = git.NewMockClient(t)
+		conf.GitClient = NewMockGitClient(t)
 	}
 	if conf.StorageClient == nil {
 		conf.StorageClient = storage.NewMockClient(t)

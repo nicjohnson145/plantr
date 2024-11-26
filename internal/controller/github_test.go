@@ -1,4 +1,4 @@
-package git
+package controller
 
 import (
 	"testing"
@@ -32,7 +32,7 @@ func TestGithub_ParseUrl(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			owner, repo, err := (&Github{}).parseUrl(tc.url)
+			owner, repo, err := (&GithubGitClient{}).parseUrl(tc.url)
 			require.NoError(t, err)
 			require.Equal(t, tc.owner, owner)
 			require.Equal(t, tc.repo, repo)

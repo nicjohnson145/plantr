@@ -18,7 +18,6 @@ import (
 	"github.com/nicjohnson145/plantr/gen/plantr/controller/v1/controllerv1connect"
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/controller"
-	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/vault"
@@ -57,7 +56,7 @@ func run() error {
 		return err
 	}
 
-	gitClient, err := git.NewFromEnv(config.Component(logger, "git"))
+	gitClient, err := controller.NewGitFromEnv(config.Component(logger, "git"))
 	if err != nil {
 		logger.Err(err).Msg("error initializing git client")
 		return err

@@ -9,6 +9,6 @@ packages:
   github.com/nicjohnson145/plantr/internal/storage:
     interfaces:
       Client:
-  github.com/nicjohnson145/plantr/internal/git:
+  github.com/nicjohnson145/plantr/internal/controller:
     interfaces:
-      Client:
+      GitClient:

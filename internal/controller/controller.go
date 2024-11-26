@@ -19,7 +19,6 @@ import (
 	hsqlx "github.com/nicjohnson145/hlp/sqlx"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/encryption"
-	"github.com/nicjohnson145/plantr/internal/git"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/storage"
@@ -41,7 +40,7 @@ var (
 
 type ControllerConfig struct {
 	Logger             zerolog.Logger
-	GitClient          git.Client
+	GitClient          GitClient
 	StorageClient      storage.Client
 	RepoURL            string
 	JWTSigningKey      []byte
@@ -84,7 +83,7 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 
 type Controller struct {
 	log                zerolog.Logger
-	git                git.Client
+	git                GitClient
 	store              storage.Client
 	repoUrl            string
 	jwtSigningKey      []byte

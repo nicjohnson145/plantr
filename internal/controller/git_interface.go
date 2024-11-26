@@ -1,4 +1,4 @@
-package git
+package controller
 
 import (
 	"fmt"
@@ -9,13 +9,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Client interface {
+type GitClient interface {
 	GetLatestCommit(url string) (string, error)
 	CloneAtCommit(url string, commit string) (fs.FS, error)
 	GetLatestRelease(url string) (string, error)
 }
 
-func NewFromEnv(logger zerolog.Logger) (Client, error) {
+func NewGitFromEnv(logger zerolog.Logger) (GitClient, error) {
 	kind, err := config.ParseGitKind(viper.GetString(config.GitType))
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func NewFromEnv(logger zerolog.Logger) (Client, error) {
 
 	switch kind {
 	case config.GitKindGithub:
-		gh, err := NewGithub(GithubConfig{
+		gh, err := NewGithubGitClient(GithubGitClientConfig{
 			Logger: logger,
 			Token:  viper.GetString(config.GitAccessToken),
 		})
@@ -32,7 +32,7 @@ func NewFromEnv(logger zerolog.Logger) (Client, error) {
 		}
 		return gh, nil
 	case config.GitKindStatic:
-		s, err := NewStatic(StaticConfig{
+		s, err := NewStaticGitClient(StaticGitClientConfig{
 			Logger:       logger,
 			CheckoutPath: viper.GetString(config.GitStaticCheckoutPath),
 		})
