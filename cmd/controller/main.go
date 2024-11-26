@@ -17,6 +17,7 @@ import (
 	"github.com/nicjohnson145/hlp/set"
 	"github.com/nicjohnson145/plantr/gen/plantr/controller/v1/controllerv1connect"
 	"github.com/nicjohnson145/plantr/internal/config"
+	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/nicjohnson145/plantr/internal/controller"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/vault"
@@ -36,9 +37,9 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logger := config.Init(&config.LoggingConfig{
-		Level:  config.LogLevel(viper.GetString(config.LoggingLevel)),
-		Format: config.LogFormat(viper.GetString(config.LoggingFormat)),
+	logger := logging.Init(&logging.LoggingConfig{
+		Level:  logging.LogLevel(viper.GetString(config.LoggingLevel)),
+		Format: logging.LogFormat(viper.GetString(config.LoggingFormat)),
 	})
 
 	// JWT bits
@@ -48,20 +49,20 @@ func run() error {
 		return fmt.Errorf("must provide JWT signing key")
 	}
 
-	storage, storageCleanup, err := controller.NewStorageClientFromEnv(config.Component(logger, "storage"))
+	storage, storageCleanup, err := controller.NewStorageClientFromEnv(logging.Component(logger, "storage"))
 	defer storageCleanup()
 	if err != nil {
 		logger.Err(err).Msg("error initializing storage client")
 		return err
 	}
 
-	gitClient, err := controller.NewGitFromEnv(config.Component(logger, "git"))
+	gitClient, err := controller.NewGitFromEnv(logging.Component(logger, "git"))
 	if err != nil {
 		logger.Err(err).Msg("error initializing git client")
 		return err
 	}
 
-	vaultClient, err := vault.NewFromEnv(config.Component(logger, "vault"))
+	vaultClient, err := vault.NewFromEnv(logging.Component(logger, "vault"))
 	if err != nil {
 		logger.Err(err).Msg("error initializing vault client")
 		return err
@@ -80,7 +81,7 @@ func run() error {
 	}
 
 	ctrl, err := controller.NewController(controller.ControllerConfig{
-		Logger:        config.Component(logger, "service"),
+		Logger:        logging.Component(logger, "service"),
 		StorageClient: storage,
 		GitClient:     gitClient,
 		RepoURL:       url,

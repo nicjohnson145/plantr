@@ -5,6 +5,7 @@ import (
 
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/encryption"
+	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -17,9 +18,9 @@ func generateKeyPair() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config.InitConfig()
 
-			logger := config.Init(&config.LoggingConfig{
-				Level:  config.LogLevel(viper.GetString(config.LoggingLevel)),
-				Format: config.LogFormatHuman,
+			logger := logging.Init(&logging.LoggingConfig{
+				Level:  logging.LogLevel(viper.GetString(config.LoggingLevel)),
+				Format: logging.LogFormatHuman,
 			})
 
 			public, private, err := encryption.GenerateKeyPair(&encryption.KeyOpts{})

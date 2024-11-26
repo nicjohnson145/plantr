@@ -18,6 +18,7 @@ import (
 	"github.com/nicjohnson145/plantr/internal/agent"
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
+	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -34,9 +35,9 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logger := config.Init(&config.LoggingConfig{
-		Level:  config.LogLevel(viper.GetString(config.LoggingLevel)),
-		Format: config.LogFormat(viper.GetString(config.LoggingFormat)),
+	logger := logging.Init(&logging.LoggingConfig{
+		Level:  logging.LogLevel(viper.GetString(config.LoggingLevel)),
+		Format: logging.LogFormat(viper.GetString(config.LoggingFormat)),
 	})
 
 	// Reflection
@@ -72,14 +73,14 @@ func run() error {
 	}
 
 	worker := agent.NewAgent(agent.AgentConfig{
-		Logger:            logger.With().Str("component", "agent-worker").Logger(),
+		Logger:            logging.Component(logger, "agent-worker"),
 		NodeID:            nodeID,
 		ControllerAddress: controllerAddress,
 		PrivateKey:        string(privateKeyBytes),
 	})
 
 	srv := agent.NewService(agent.ServiceConfig{
-		Logger: logger.With().Str("component", "service").Logger(),
+		Logger: logging.Component(logger, "service"),
 		Agent:  worker,
 	})
 

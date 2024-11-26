@@ -3,6 +3,7 @@ package config
 import (
 	"strings"
 
+	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/viper"
 )
 
@@ -56,8 +57,8 @@ const (
 var (
 	DefaultPort = "8080"
 
-	DefaultLogLevel     = LogLevelInfo.String()
-	DefaultLogFormat    = LogFormatJson.String()
+	DefaultLogLevel     = logging.LogLevelInfo.String()
+	DefaultLogFormat    = logging.LogFormatJson.String()
 	DefaultLogRequests  = false
 	DefaultLogResponses = false
 
