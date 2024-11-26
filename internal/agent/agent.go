@@ -167,7 +167,7 @@ func (a *Agent) executeSeed_configFile(seed *controllerv1.ConfigFile) error {
 		return fmt.Errorf("error creating containing dir: %w", err)
 	}
 	// TODO: configurable permissions
-	if err := os.WriteFile(seed.Destination, []byte(seed.Content), 0644); err != nil {
+	if err := os.WriteFile(seed.Destination, []byte(seed.Content), 0644); err != nil { //nolint:gosec // ignore until configurable permissions
 		return fmt.Errorf("error creating file: %w", err)
 	}
 	return nil
