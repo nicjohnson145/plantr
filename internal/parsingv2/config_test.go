@@ -227,3 +227,56 @@ func TestGithubRelease(t *testing.T) {
 		})
 	}
 }
+
+func TestSystemPackage(t *testing.T) {
+	t.Parallel()
+
+	valid := func() *configv1.SystemPackage {
+		return &configv1.SystemPackage{
+			Apt: &configv1.SystemPackage_Apt{
+				Name: "some-apt-package",
+			},
+		}
+	}
+
+	testData := []struct {
+		name    string
+		modFunc func(x *configv1.SystemPackage)
+		err     string
+	}{
+		{
+			name:    "valid",
+			modFunc: func(x *configv1.SystemPackage) {},
+			err:     "",
+		},
+		{
+			name:    "no apt name",
+			modFunc: func(x *configv1.SystemPackage) {
+				x.Apt.Name = ""
+			},
+			err:     "name is a required field",
+		},
+		{
+			name:    "no top level keys",
+			modFunc: func(x *configv1.SystemPackage) {
+				x.Apt = nil
+			},
+			err:     "at least one of ['apt'] is required" ,
+		},
+	}
+	for _, tc := range testData {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			validObj := valid()
+			tc.modFunc(validObj)
+
+			_, err := parseSeed_systemPackage(validObj)
+			if tc.err == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}

@@ -97,6 +97,12 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 				return nil, fmt.Errorf("error parsing item %v: %w", i, err)
 			}
 			outSeeds[i] = seed
+		case *configv1.Seed_SystemPackage:
+			seed, err := parseSeed_systemPackage(concrete.SystemPackage)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing item %v: %w", i, err)
+			}
+			outSeeds[i] = seed
 		default:
 			return nil, fmt.Errorf("unhandled seed type %T", concrete)
 		}
@@ -172,5 +178,23 @@ func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
 			AssetPatterns: assetPatterns,
 			Tag:           release.Tag,
 		},
+	}, nil
+}
+
+func parseSeed_systemPackage(pkg *configv1.SystemPackage) (*Seed, error) {
+	if err := protovalidate.Validate(pkg); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
+	}
+
+	outPkg := &SystemPackage{}
+
+	if pkg.Apt != nil {
+		outPkg.Apt = &SystemPackageApt{
+			Name: pkg.Apt.Name,
+		}
+	}
+
+	return &Seed{
+		Element: outPkg,
 	}, nil
 }

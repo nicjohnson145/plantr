@@ -40,11 +40,29 @@ message GithubRelease {
   }];
 }
 
+message SystemPackage {
+  message Apt {
+    string name = 1[(buf.validate.field).cel = {
+      id: "SystemPackage.Apt.name",
+      message: "name is a required field",
+      expression: "size(this) > 0"
+    }];
+  }
+  Apt apt = 1;
+
+  option (buf.validate.message).cel = {
+    id: "SystemPackage",
+    message: "at least one of ['apt'] is required",
+    expression: "has(this.apt)"
+  };
+}
+
 message Seed {
   oneof element {
     option (buf.validate.oneof).required = true;
     ConfigFile config_file = 1;
     GithubRelease github_release = 2;
+    SystemPackage system_package = 3;
   }
 }
 

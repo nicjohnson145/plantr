@@ -17,9 +17,17 @@ message GithubRelease {
   string download_url = 1;
 }
 
+message SystemPackage {
+  message Apt {
+    string name = 1;
+  }
+  Apt apt = 1;
+}
+
 message Seed {
   oneof element {
     ConfigFile config_file = 1;
     GithubRelease github_release = 2;
+    SystemPackage system_package = 3;
   }
 }

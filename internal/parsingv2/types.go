@@ -40,3 +40,11 @@ func (g *GithubRelease) GetAssetPattern(os string, arch string) *regexp.Regexp {
 	}
 	return archMap[arch]
 }
+
+type SystemPackageApt struct {
+	Name string
+}
+
+type SystemPackage struct {
+	Apt *SystemPackageApt
+}

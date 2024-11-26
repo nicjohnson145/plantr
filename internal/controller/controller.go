@@ -342,6 +342,17 @@ func seedHash(x *parsingv2.Seed) string {
 			"GithubRelease",
 			concrete.Repo,
 		}
+	case *parsingv2.SystemPackage:
+		parts = []string{
+			"SystemPackage",
+		}
+		if concrete.Apt != nil {
+			parts = append(
+				parts,
+				"APT",
+				concrete.Apt.Name,
+			)
+		}
 	default:
 		panic(fmt.Sprintf("unhandled seed type %T", concrete))
 	}
@@ -420,6 +431,16 @@ func (c *Controller) renderSeeds(node *parsingv2.Node, seeds []*parsingv2.Seed) 
 					GithubRelease: out,
 				},
 			}
+		case *parsingv2.SystemPackage:
+			out, err := c.renderSeed_systemPackage(concrete)
+			if err != nil {
+				return nil, fmt.Errorf("error converting system package: %w", err)
+			}
+			outSeeds[i] = &pbv1.Seed{
+				Element: &pbv1.Seed_SystemPackage{
+					SystemPackage: out,
+				},
+			}
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
 		}
@@ -448,4 +469,16 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *par
 		Content:     buf.String(),
 		Destination: strings.ReplaceAll(file.Destination, "~", node.UserHome),
 	}, nil
+}
+
+func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage) (*pbv1.SystemPackage, error) {
+	outPkg := &pbv1.SystemPackage{}
+
+	if pkg.Apt != nil {
+		outPkg.Apt = &pbv1.SystemPackage_Apt{
+			Name: pkg.Apt.Name,
+		}
+	}
+
+	return outPkg, nil
 }
