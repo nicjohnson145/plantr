@@ -6,9 +6,7 @@ outpkg: "{{.PackageName}}"
 inpackage: True
 disable-version-string: True
 packages:
-  github.com/nicjohnson145/plantr/internal/storage:
-    interfaces:
-      Client:
   github.com/nicjohnson145/plantr/internal/controller:
     interfaces:
       GitClient:
+      StorageClient:

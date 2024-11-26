@@ -12,7 +12,6 @@ import (
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
-	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/token"
 	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/stretchr/testify/mock"
@@ -26,7 +25,7 @@ func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *pa
 		conf.GitClient = NewMockGitClient(t)
 	}
 	if conf.StorageClient == nil {
-		conf.StorageClient = storage.NewMockClient(t)
+		conf.StorageClient = NewMockStorageClient(t)
 	}
 	if conf.JWTDuration.Seconds() == 0 {
 		conf.JWTDuration = 10 * 24 * time.Hour
@@ -57,11 +56,11 @@ func TestController_Login(t *testing.T) {
 	t.Run("happy path - post challenge", func(t *testing.T) {
 		t.Parallel()
 
-		store := storage.NewMockClient(t)
+		store := NewMockStorageClient(t)
 		store.
 			EXPECT().
 			ReadChallenge(mock.Anything, challengeID).
-			Return(&storage.Challenge{ID: challengeID, Value: challengeValue}, nil)
+			Return(&Challenge{ID: challengeID, Value: challengeValue}, nil)
 
 		ctrl := newControllerWithConfig(
 			t,

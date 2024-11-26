@@ -19,7 +19,6 @@ import (
 	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/controller"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
-	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
@@ -49,7 +48,7 @@ func run() error {
 		return fmt.Errorf("must provide JWT signing key")
 	}
 
-	storage, storageCleanup, err := storage.NewFromEnv(config.Component(logger, "storage"))
+	storage, storageCleanup, err := controller.NewStorageClientFromEnv(config.Component(logger, "storage"))
 	defer storageCleanup()
 	if err != nil {
 		logger.Err(err).Msg("error initializing storage client")

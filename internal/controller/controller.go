@@ -21,7 +21,6 @@ import (
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
-	"github.com/nicjohnson145/plantr/internal/storage"
 	"github.com/nicjohnson145/plantr/internal/token"
 	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/oklog/ulid/v2"
@@ -41,7 +40,7 @@ var (
 type ControllerConfig struct {
 	Logger             zerolog.Logger
 	GitClient          GitClient
-	StorageClient      storage.Client
+	StorageClient      StorageClient
 	RepoURL            string
 	JWTSigningKey      []byte
 	JWTDuration        time.Duration
@@ -84,7 +83,7 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 type Controller struct {
 	log                zerolog.Logger
 	git                GitClient
-	store              storage.Client
+	store              StorageClient
 	repoUrl            string
 	jwtSigningKey      []byte
 	jwtDuration        time.Duration
@@ -251,7 +250,7 @@ func (c *Controller) Login(ctx context.Context, req *connect.Request[pbv1.LoginR
 			return nil, c.logAndHandleError(err, "error encrypting challenge")
 		}
 
-		challenge := &storage.Challenge{
+		challenge := &Challenge{
 			ID:    challengeID,
 			Value: challengeValue,
 		}

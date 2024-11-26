@@ -1,4 +1,4 @@
-package storage
+package controller
 
 import (
 	"database/sql"

@@ -1,4 +1,4 @@
-package storage
+package controller
 
 type Challenge struct {
 	ID    string `db:"id"`

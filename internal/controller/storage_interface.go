@@ -1,4 +1,4 @@
-package storage
+package controller
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 	_ "modernc.org/sqlite" // import sqlite driver
 )
 
-type Client interface {
+type StorageClient interface {
 	WriteChallenge(ctx context.Context, challenge *Challenge) error
 	ReadChallenge(ctx context.Context, id string) (*Challenge, error)
 }
 
-func NewFromEnv(logger zerolog.Logger) (Client, func(), error) {
+func NewStorageClientFromEnv(logger zerolog.Logger) (StorageClient, func(), error) {
 	cleanup := func() {}
 
 	kind, err := config.ParseStorageKind(viper.GetString(config.StorageType))
