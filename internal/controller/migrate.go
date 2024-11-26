@@ -10,20 +10,19 @@ import (
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/nicjohnson145/plantr/internal/config"
 )
 
 //go:embed sqlite-migrations/*.sql
 var sqliteMigrations embed.FS
 
-func ExecuteMigrations(dbType config.StorageKind, db *sql.DB) error {
+func ExecuteMigrations(dbType StorageKind, db *sql.DB) error {
 	var driver database.Driver
 	var kind string
 	var fs embed.FS
 	var path string
 
 	switch dbType {
-	case config.StorageKindSqlite:
+	case StorageKindSqlite:
 		path = "sqlite-migrations"
 		fs = sqliteMigrations
 		kind = "sqlite"

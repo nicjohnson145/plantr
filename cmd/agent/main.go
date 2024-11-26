@@ -16,7 +16,6 @@ import (
 	agentv1 "github.com/nicjohnson145/plantr/gen/plantr/agent/v1"
 	"github.com/nicjohnson145/plantr/gen/plantr/agent/v1/agentv1connect"
 	"github.com/nicjohnson145/plantr/internal/agent"
-	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/viper"
@@ -31,13 +30,13 @@ func main() {
 }
 
 func run() error {
-	config.InitConfig()
+	agent.InitConfig()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	logger := logging.Init(&logging.LoggingConfig{
-		Level:  logging.LogLevel(viper.GetString(config.LoggingLevel)),
-		Format: logging.LogFormat(viper.GetString(config.LoggingFormat)),
+		Level:  logging.LogLevel(viper.GetString(agent.LoggingLevel)),
+		Format: logging.LogFormat(viper.GetString(agent.LoggingFormat)),
 	})
 
 	// Reflection
@@ -46,7 +45,7 @@ func run() error {
 	)
 
 	// Actual sync worker
-	keyPath := viper.GetString(config.PrivateKeyPath)
+	keyPath := viper.GetString(agent.PrivateKeyPath)
 	if keyPath == "" {
 		msg := "private key path must be set"
 		logger.Error().Msg(msg)
@@ -58,14 +57,14 @@ func run() error {
 		return err
 	}
 
-	controllerAddress := viper.GetString(config.ControllerAddress)
+	controllerAddress := viper.GetString(agent.ControllerAddress)
 	if controllerAddress == "" {
 		msg := "controller address must be set"
 		logger.Error().Msg(msg)
 		return errors.New(msg)
 	}
 
-	nodeID := viper.GetString(config.NodeID)
+	nodeID := viper.GetString(agent.NodeID)
 	if nodeID == "" {
 		msg := "node id must be set"
 		logger.Error().Msg(msg)
@@ -91,8 +90,8 @@ func run() error {
 			interceptors.NewLoggingInterceptor(
 				logger,
 				interceptors.LoggingInterceptorConfig{
-					LogRequests:  viper.GetBool(config.LogRequests),
-					LogResponses: viper.GetBool(config.LogResponses),
+					LogRequests:  viper.GetBool(agent.LogRequests),
+					LogResponses: viper.GetBool(agent.LogResponses),
 				},
 			),
 		),
@@ -100,7 +99,7 @@ func run() error {
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 
-	port := viper.GetString(config.Port)
+	port := viper.GetString(agent.Port)
 	lis, err := net.Listen("tcp4", ":"+port)
 	if err != nil {
 		logger.Err(err).Msg("error listening")
@@ -119,7 +118,7 @@ func run() error {
 
 	wg := sync.WaitGroup{}
 
-	pollInterval := viper.GetDuration(config.AgentPollInterval)
+	pollInterval := viper.GetDuration(agent.PollInterval)
 	if pollInterval.Seconds() == 0 {
 		logger.Info().Msg("poll internal set to 0s, disabling background worker")
 	} else {

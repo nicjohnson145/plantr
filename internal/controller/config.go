@@ -1,4 +1,4 @@
-package config
+package controller
 
 import (
 	"strings"
@@ -45,11 +45,6 @@ const (
 	JWTSigningKey = "jwt.signing_key"
 	JWTDuration   = "jwt.duration"
 
-	ControllerAddress = "controller.address"
-	PrivateKeyPath    = "private_key.path"
-	NodeID            = "node.id"
-	AgentPollInterval = "agent.poll_interval"
-
 	VaultEnabled          = "vault.enabled"
 	VaultHashicorpAddress = "vault.hashicorp.address"
 )
@@ -90,8 +85,6 @@ func InitConfig() {
 	viper.SetDefault(GitType, DefaultGitType)
 
 	viper.SetDefault(JWTDuration, DefaultJWTDuration)
-
-	viper.SetDefault(AgentPollInterval, DefaultAgentPollInterval)
 
 	viper.SetDefault(VaultEnabled, DefaultVaultEnabled)
 

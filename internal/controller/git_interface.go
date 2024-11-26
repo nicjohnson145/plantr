@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 
-	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
@@ -16,25 +15,25 @@ type GitClient interface {
 }
 
 func NewGitFromEnv(logger zerolog.Logger) (GitClient, error) {
-	kind, err := config.ParseGitKind(viper.GetString(config.GitType))
+	kind, err := ParseGitKind(viper.GetString(GitType))
 	if err != nil {
 		return nil, err
 	}
 
 	switch kind {
-	case config.GitKindGithub:
+	case GitKindGithub:
 		gh, err := NewGithubGitClient(GithubGitClientConfig{
 			Logger: logger,
-			Token:  viper.GetString(config.GitAccessToken),
+			Token:  viper.GetString(GitAccessToken),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error initializing GitHub client: %w", err)
 		}
 		return gh, nil
-	case config.GitKindStatic:
+	case GitKindStatic:
 		s, err := NewStaticGitClient(StaticGitClientConfig{
 			Logger:       logger,
-			CheckoutPath: viper.GetString(config.GitStaticCheckoutPath),
+			CheckoutPath: viper.GetString(GitStaticCheckoutPath),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error initializing static client: %w", err)

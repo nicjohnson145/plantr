@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	_ "modernc.org/sqlite" // import sqlite driver
@@ -19,7 +18,7 @@ type StorageClient interface {
 func NewStorageClientFromEnv(logger zerolog.Logger) (StorageClient, func(), error) {
 	cleanup := func() {}
 
-	kind, err := config.ParseStorageKind(viper.GetString(config.StorageType))
+	kind, err := ParseStorageKind(viper.GetString(StorageType))
 	if err != nil {
 		return nil, cleanup, err
 	}
@@ -27,9 +26,9 @@ func NewStorageClientFromEnv(logger zerolog.Logger) (StorageClient, func(), erro
 	var driver string
 	var dsn string
 	switch kind {
-	case config.StorageKindSqlite:
+	case StorageKindSqlite:
 		driver = "sqlite"
-		dsn = viper.GetString(config.SqliteDBPath)
+		dsn = viper.GetString(SqliteDBPath)
 	default:
 		return nil, cleanup, fmt.Errorf("unhandled type of '%v'", kind)
 	}
@@ -49,7 +48,7 @@ func NewStorageClientFromEnv(logger zerolog.Logger) (StorageClient, func(), erro
 	}
 
 	switch kind {
-	case config.StorageKindSqlite:
+	case StorageKindSqlite:
 		sqlite, err := NewSqlLite(SqlLiteConfig{
 			Logger: logger,
 			DB:     db,

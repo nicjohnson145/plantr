@@ -16,11 +16,9 @@ import (
 	"connectrpc.com/grpcreflect"
 	"github.com/nicjohnson145/hlp/set"
 	"github.com/nicjohnson145/plantr/gen/plantr/controller/v1/controllerv1connect"
-	"github.com/nicjohnson145/plantr/internal/config"
 	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/nicjohnson145/plantr/internal/controller"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
-	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -33,17 +31,17 @@ func main() {
 }
 
 func run() error {
-	config.InitConfig()
+	controller.InitConfig()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	logger := logging.Init(&logging.LoggingConfig{
-		Level:  logging.LogLevel(viper.GetString(config.LoggingLevel)),
-		Format: logging.LogFormat(viper.GetString(config.LoggingFormat)),
+		Level:  logging.LogLevel(viper.GetString(controller.LoggingLevel)),
+		Format: logging.LogFormat(viper.GetString(controller.LoggingFormat)),
 	})
 
 	// JWT bits
-	jwtKeyStr := viper.GetString(config.JWTSigningKey)
+	jwtKeyStr := viper.GetString(controller.JWTSigningKey)
 	if jwtKeyStr == "" {
 		logger.Error().Msg("must provide JWT signing key")
 		return fmt.Errorf("must provide JWT signing key")
@@ -62,7 +60,7 @@ func run() error {
 		return err
 	}
 
-	vaultClient, err := vault.NewFromEnv(logging.Component(logger, "vault"))
+	vaultClient, err := controller.NewVaultFromEnv(logging.Component(logger, "vault"))
 	if err != nil {
 		logger.Err(err).Msg("error initializing vault client")
 		return err
@@ -74,7 +72,7 @@ func run() error {
 	)
 
 	// Get the root configuration for the repo
-	url := viper.GetString(config.GitUrl)
+	url := viper.GetString(controller.GitUrl)
 	if url == "" {
 		logger.Error().Msg("must provide a repo url")
 		return fmt.Errorf("must provide a repo url")
@@ -86,7 +84,7 @@ func run() error {
 		GitClient:     gitClient,
 		RepoURL:       url,
 		JWTSigningKey: []byte(jwtKeyStr),
-		JWTDuration:   viper.GetDuration(config.JWTDuration),
+		JWTDuration:   viper.GetDuration(controller.JWTDuration),
 		VaultClient:   vaultClient,
 	})
 	if err != nil {
@@ -101,8 +99,8 @@ func run() error {
 			interceptors.NewLoggingInterceptor(
 				logger,
 				interceptors.LoggingInterceptorConfig{
-					LogRequests:  viper.GetBool(config.LogRequests),
-					LogResponses: viper.GetBool(config.LogResponses),
+					LogRequests:  viper.GetBool(controller.LogRequests),
+					LogResponses: viper.GetBool(controller.LogResponses),
 				},
 			),
 			interceptors.NewAuthInterceptor(
@@ -117,7 +115,7 @@ func run() error {
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 
-	port := viper.GetString(config.Port)
+	port := viper.GetString(controller.Port)
 	lis, err := net.Listen("tcp4", ":"+port)
 	if err != nil {
 		logger.Err(err).Msg("error listening")

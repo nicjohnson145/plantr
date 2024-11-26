@@ -13,7 +13,6 @@ import (
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/token"
-	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -158,7 +157,7 @@ func TestController_GetSyncData(t *testing.T) {
 		ctrl := newControllerWithConfig(
 			t,
 			ControllerConfig{
-				VaultClient: vault.NewNoop(vault.NoopConfig{}),
+				VaultClient: NewNoopVault(NoopVaultConfig{}),
 			},
 			&parsingv2.Config{
 				Roles: map[string][]*parsingv2.Seed{

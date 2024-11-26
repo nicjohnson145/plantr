@@ -22,7 +22,6 @@ import (
 	"github.com/nicjohnson145/plantr/internal/interceptors"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/nicjohnson145/plantr/internal/token"
-	"github.com/nicjohnson145/plantr/internal/vault"
 	"github.com/oklog/ulid/v2"
 	"github.com/qdm12/reprint"
 	"github.com/rs/zerolog"
@@ -44,7 +43,7 @@ type ControllerConfig struct {
 	RepoURL            string
 	JWTSigningKey      []byte
 	JWTDuration        time.Duration
-	VaultClient        vault.Client
+	VaultClient        VaultClient
 	HttpClient         *http.Client
 	GithubReleaseToken string
 
@@ -87,7 +86,7 @@ type Controller struct {
 	repoUrl            string
 	jwtSigningKey      []byte
 	jwtDuration        time.Duration
-	vault              vault.Client
+	vault              VaultClient
 	httpClient         *http.Client
 	githubReleaseToken string
 
