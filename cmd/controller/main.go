@@ -16,9 +16,9 @@ import (
 	"connectrpc.com/grpcreflect"
 	"github.com/nicjohnson145/hlp/set"
 	"github.com/nicjohnson145/plantr/gen/plantr/controller/v1/controllerv1connect"
-	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/nicjohnson145/plantr/internal/controller"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
+	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/viper"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -79,13 +79,14 @@ func run() error {
 	}
 
 	ctrl, err := controller.NewController(controller.ControllerConfig{
-		Logger:        logging.Component(logger, "service"),
-		StorageClient: storage,
-		GitClient:     gitClient,
-		RepoURL:       url,
-		JWTSigningKey: []byte(jwtKeyStr),
-		JWTDuration:   viper.GetDuration(controller.JWTDuration),
-		VaultClient:   vaultClient,
+		Logger:             logging.Component(logger, "service"),
+		StorageClient:      storage,
+		GitClient:          gitClient,
+		RepoURL:            url,
+		JWTSigningKey:      []byte(jwtKeyStr),
+		JWTDuration:        viper.GetDuration(controller.JWTDuration),
+		VaultClient:        vaultClient,
+		GithubReleaseToken: viper.GetString(controller.GitAccessToken),
 	})
 	if err != nil {
 		logger.Err(err).Msg("error initializing controller")

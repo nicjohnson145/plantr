@@ -153,6 +153,10 @@ func (a *Agent) executeSeeds(seeds []*controllerv1.Seed) error {
 			if err := a.executeSeed_configFile(concrete.ConfigFile); err != nil {
 				errs = append(errs, fmt.Errorf("error executing config file: %w", err))
 			}
+		case *controllerv1.Seed_GithubRelease:
+			if err := a.executeSeed_githubRelease(concrete.GithubRelease); err != nil {
+				errs = append(errs, fmt.Errorf("error executing github release: %w", err))
+			}
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
 		}
@@ -172,3 +176,4 @@ func (a *Agent) executeSeed_configFile(seed *controllerv1.ConfigFile) error {
 	}
 	return nil
 }
+

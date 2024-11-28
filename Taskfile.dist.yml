@@ -80,7 +80,7 @@ tasks:
       NODE_ID: "{{ .YOUR_HOST_ID }}"
       PORT: "8090"
       CONTROLLER_ADDRESS: "http://localhost:8080"
-      AGENT_POLL_INTERVAL: "0s"
+      POLL_INTERVAL: "0s"
     cmds:
     - task: build-agent
     - ./plantr-agent

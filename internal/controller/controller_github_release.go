@@ -48,9 +48,19 @@ func (c *Controller) renderSeed_githubRelease(release *parsingv2.GithubRelease, 
 		return nil, fmt.Errorf("error filtering release assets: %w", err)
 	}
 
-	return &pbv1.GithubRelease{
-		DownloadUrl: asset.DownloadUrl,
-	}, nil
+	outRelease := &pbv1.GithubRelease{
+		DownloadUrl:          asset.DownloadUrl,
+		DestinationDirectory: node.BinDir,
+		BinaryNameOverride:   release.BinaryNameOverride,
+	}
+
+	if c.githubReleaseToken != "" {
+		outRelease.Authentication = &pbv1.GithubRelease_Authentication{
+			BearerAuth: fmt.Sprintf("Bearer %v", c.githubReleaseToken),
+		}
+	}
+
+	return outRelease, nil
 }
 
 var (

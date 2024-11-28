@@ -28,9 +28,10 @@ type ConfigFile struct {
 }
 
 type GithubRelease struct {
-	Repo          string
-	AssetPatterns map[string]map[string]*regexp.Regexp
-	Tag           string
+	Repo               string
+	AssetPatterns      map[string]map[string]*regexp.Regexp
+	Tag                string
+	BinaryNameOverride *string
 }
 
 func (g *GithubRelease) GetAssetPattern(os string, arch string) *regexp.Regexp {

@@ -14,7 +14,13 @@ message ConfigFile {
 }
 
 message GithubRelease {
+  message Authentication {
+    string bearer_auth = 1;
+  }
   string download_url = 1;
+  Authentication authentication = 2;
+  string destination_directory = 3;
+  optional string binary_name_override = 4;
 }
 
 message SystemPackage {

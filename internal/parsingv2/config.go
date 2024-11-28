@@ -78,6 +78,8 @@ func parseNode(node *configv1.Node) (*Node, error) {
 		Roles:     node.Roles,
 		UserHome:  node.UserHome,
 		BinDir:    hlp.Ternary(node.BinDir == "", filepath.Join(node.UserHome, "bin"), node.BinDir),
+		OS:        node.Os,
+		Arch:      node.Arch,
 	}, nil
 }
 
@@ -174,9 +176,10 @@ func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
 
 	return &Seed{
 		Element: &GithubRelease{
-			Repo:          release.Repo,
-			AssetPatterns: assetPatterns,
-			Tag:           release.Tag,
+			Repo:               release.Repo,
+			AssetPatterns:      assetPatterns,
+			Tag:                release.Tag,
+			BinaryNameOverride: release.BinaryNameOverride,
 		},
 	}, nil
 }
