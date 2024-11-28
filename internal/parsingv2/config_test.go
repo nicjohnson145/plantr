@@ -186,21 +186,21 @@ func TestGithubRelease(t *testing.T) {
 			err:     "",
 		},
 		{
-			name:    "no repo",
+			name: "no repo",
 			modFunc: func(x *configv1.GithubRelease) {
 				x.Repo = ""
 			},
-			err:     "repo is a required field",
+			err: "repo is a required field",
 		},
 		{
-			name:    "no tag",
+			name: "no tag",
 			modFunc: func(x *configv1.GithubRelease) {
 				x.Tag = ""
 			},
-			err:     "tag is a required field",
+			err: "tag is a required field",
 		},
 		{
-			name:    "invalid regex",
+			name: "invalid regex",
 			modFunc: func(x *configv1.GithubRelease) {
 				x.AssetPatterns = &configv1.GithubRelease_AssetPattern{
 					Linux: &configv1.GithubRelease_AssetPattern_ArchPattern{
@@ -208,7 +208,7 @@ func TestGithubRelease(t *testing.T) {
 					},
 				}
 			},
-			err:     "invalid regex: error parsing regex for linux/amd64",
+			err: "invalid regex: error parsing regex for linux/amd64",
 		},
 	}
 	for _, tc := range testData {
@@ -250,18 +250,18 @@ func TestSystemPackage(t *testing.T) {
 			err:     "",
 		},
 		{
-			name:    "no apt name",
+			name: "no apt name",
 			modFunc: func(x *configv1.SystemPackage) {
 				x.Apt.Name = ""
 			},
-			err:     "name is a required field",
+			err: "name is a required field",
 		},
 		{
-			name:    "no top level keys",
+			name: "no top level keys",
 			modFunc: func(x *configv1.SystemPackage) {
 				x.Apt = nil
 			},
-			err:     "at least one of ['apt'] is required" ,
+			err: "at least one of ['apt'] is required",
 		},
 	}
 	for _, tc := range testData {

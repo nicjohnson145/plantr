@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/rs/zerolog"
 	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog"
 )
 
 type NoopVaultConfig struct {
@@ -32,4 +32,3 @@ func (n *NoopVault) ReadSecretData() (map[string]any, error) {
 		"foo": "static-foo-value",
 	}, nil
 }
-

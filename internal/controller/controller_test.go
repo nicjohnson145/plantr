@@ -170,8 +170,8 @@ func TestController_GetSyncData(t *testing.T) {
 				},
 				Nodes: []*parsingv2.Node{
 					{
-						ID: nodeID,
-						Roles: []string{"foo"},
+						ID:       nodeID,
+						Roles:    []string{"foo"},
 						UserHome: "/home/fake-user",
 					},
 				},

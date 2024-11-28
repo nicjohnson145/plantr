@@ -7,15 +7,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-
 const (
 	LoggingLevel  = "log.level"
 	LoggingFormat = "log.format"
 )
 
 var (
-	DefaultLogLevel     = logging.LogLevelInfo.String()
-	DefaultLogFormat    = logging.LogFormatHuman.String()
+	DefaultLogLevel  = logging.LogLevelInfo.String()
+	DefaultLogFormat = logging.LogFormatHuman.String()
 )
 
 func InitConfig() {

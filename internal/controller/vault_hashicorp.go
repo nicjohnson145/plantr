@@ -20,7 +20,6 @@ type HashicorpVault struct {
 	log zerolog.Logger
 }
 
-
 func (h *HashicorpVault) GetSecretVersion() (string, error) {
 	panic("not implemented") // TODO: Implement
 }
@@ -28,4 +27,3 @@ func (h *HashicorpVault) GetSecretVersion() (string, error) {
 func (h *HashicorpVault) ReadSecretData() (map[string]any, error) {
 	panic("not implemented") // TODO: Implement
 }
-

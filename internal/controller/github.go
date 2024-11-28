@@ -20,7 +20,7 @@ import (
 
 type GithubGitClientConfig struct {
 	Logger zerolog.Logger
-	Token string
+	Token  string
 }
 
 func NewGithubGitClient(conf GithubGitClientConfig) (*GithubGitClient, error) {
@@ -122,7 +122,7 @@ func (g *GithubGitClient) GetLatestRelease(url string) (string, error) {
 	type respType struct {
 		TagName string `json:"tag_name"`
 	}
-	
+
 	var resp respType
 	var errResp map[string]any
 

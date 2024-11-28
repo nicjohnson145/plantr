@@ -7,8 +7,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/rs/zerolog"
 	hsqlx "github.com/nicjohnson145/hlp/sqlx"
+	"github.com/rs/zerolog"
 )
 
 type SqlLiteConfig struct {
@@ -40,7 +40,6 @@ func (s *SqlLite) init() error {
 
 	return nil
 }
-
 
 func (s *SqlLite) WriteChallenge(ctx context.Context, challenge *Challenge) error {
 	stmt := `

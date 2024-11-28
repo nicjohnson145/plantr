@@ -176,4 +176,3 @@ func (a *Agent) executeSeed_configFile(seed *controllerv1.ConfigFile) error {
 	}
 	return nil
 }
-

@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-
 const (
 	Port = "port"
 
@@ -19,7 +18,7 @@ const (
 	ControllerAddress = "controller.address"
 	PrivateKeyPath    = "private_key.path"
 	NodeID            = "node.id"
-	PollInterval = "poll_interval"
+	PollInterval      = "poll_interval"
 
 	VaultEnabled          = "vault.enabled"
 	VaultHashicorpAddress = "vault.hashicorp.address"
