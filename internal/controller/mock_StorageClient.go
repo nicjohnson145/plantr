@@ -81,7 +81,7 @@ func (_c *MockStorageClient_ReadChallenge_Call) RunAndReturn(run func(context.Co
 }
 
 // ReadGithubRelease provides a mock function with given fields: ctx, release
-func (_m *MockStorageClient) ReadGithubRelease(ctx context.Context, release *GithubRelease) (string, error) {
+func (_m *MockStorageClient) ReadGithubRelease(ctx context.Context, release *DBGithubRelease) (string, error) {
 	ret := _m.Called(ctx, release)
 
 	if len(ret) == 0 {
@@ -90,16 +90,16 @@ func (_m *MockStorageClient) ReadGithubRelease(ctx context.Context, release *Git
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *GithubRelease) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *DBGithubRelease) (string, error)); ok {
 		return rf(ctx, release)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *GithubRelease) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *DBGithubRelease) string); ok {
 		r0 = rf(ctx, release)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *GithubRelease) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *DBGithubRelease) error); ok {
 		r1 = rf(ctx, release)
 	} else {
 		r1 = ret.Error(1)
@@ -115,14 +115,14 @@ type MockStorageClient_ReadGithubRelease_Call struct {
 
 // ReadGithubRelease is a helper method to define mock.On call
 //   - ctx context.Context
-//   - release *GithubRelease
+//   - release *DBGithubRelease
 func (_e *MockStorageClient_Expecter) ReadGithubRelease(ctx interface{}, release interface{}) *MockStorageClient_ReadGithubRelease_Call {
 	return &MockStorageClient_ReadGithubRelease_Call{Call: _e.mock.On("ReadGithubRelease", ctx, release)}
 }
 
-func (_c *MockStorageClient_ReadGithubRelease_Call) Run(run func(ctx context.Context, release *GithubRelease)) *MockStorageClient_ReadGithubRelease_Call {
+func (_c *MockStorageClient_ReadGithubRelease_Call) Run(run func(ctx context.Context, release *DBGithubRelease)) *MockStorageClient_ReadGithubRelease_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*GithubRelease))
+		run(args[0].(context.Context), args[1].(*DBGithubRelease))
 	})
 	return _c
 }
@@ -132,7 +132,7 @@ func (_c *MockStorageClient_ReadGithubRelease_Call) Return(_a0 string, _a1 error
 	return _c
 }
 
-func (_c *MockStorageClient_ReadGithubRelease_Call) RunAndReturn(run func(context.Context, *GithubRelease) (string, error)) *MockStorageClient_ReadGithubRelease_Call {
+func (_c *MockStorageClient_ReadGithubRelease_Call) RunAndReturn(run func(context.Context, *DBGithubRelease) (string, error)) *MockStorageClient_ReadGithubRelease_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -185,7 +185,7 @@ func (_c *MockStorageClient_WriteChallenge_Call) RunAndReturn(run func(context.C
 }
 
 // WriteGithubRelease provides a mock function with given fields: ctx, release
-func (_m *MockStorageClient) WriteGithubRelease(ctx context.Context, release *GithubRelease) error {
+func (_m *MockStorageClient) WriteGithubRelease(ctx context.Context, release *DBGithubRelease) error {
 	ret := _m.Called(ctx, release)
 
 	if len(ret) == 0 {
@@ -193,7 +193,7 @@ func (_m *MockStorageClient) WriteGithubRelease(ctx context.Context, release *Gi
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *GithubRelease) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *DBGithubRelease) error); ok {
 		r0 = rf(ctx, release)
 	} else {
 		r0 = ret.Error(0)
@@ -209,14 +209,14 @@ type MockStorageClient_WriteGithubRelease_Call struct {
 
 // WriteGithubRelease is a helper method to define mock.On call
 //   - ctx context.Context
-//   - release *GithubRelease
+//   - release *DBGithubRelease
 func (_e *MockStorageClient_Expecter) WriteGithubRelease(ctx interface{}, release interface{}) *MockStorageClient_WriteGithubRelease_Call {
 	return &MockStorageClient_WriteGithubRelease_Call{Call: _e.mock.On("WriteGithubRelease", ctx, release)}
 }
 
-func (_c *MockStorageClient_WriteGithubRelease_Call) Run(run func(ctx context.Context, release *GithubRelease)) *MockStorageClient_WriteGithubRelease_Call {
+func (_c *MockStorageClient_WriteGithubRelease_Call) Run(run func(ctx context.Context, release *DBGithubRelease)) *MockStorageClient_WriteGithubRelease_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*GithubRelease))
+		run(args[0].(context.Context), args[1].(*DBGithubRelease))
 	})
 	return _c
 }
@@ -226,7 +226,7 @@ func (_c *MockStorageClient_WriteGithubRelease_Call) Return(_a0 error) *MockStor
 	return _c
 }
 
-func (_c *MockStorageClient_WriteGithubRelease_Call) RunAndReturn(run func(context.Context, *GithubRelease) error) *MockStorageClient_WriteGithubRelease_Call {
+func (_c *MockStorageClient_WriteGithubRelease_Call) RunAndReturn(run func(context.Context, *DBGithubRelease) error) *MockStorageClient_WriteGithubRelease_Call {
 	_c.Call.Return(run)
 	return _c
 }

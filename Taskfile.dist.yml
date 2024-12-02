@@ -51,7 +51,7 @@ tasks:
   run-controller:
     desc: run controller locally
     env:
-      SQLITE_DB_PATH: "local.db"
+      SQLITE_DB_PATH: "controller.db"
       STORAGE_TYPE: "sqlite"
       JWT_SIGNING_KEY: "{{ .JWT_SIGNING_KEY }}"
       #LOG_REQUESTS: "T"

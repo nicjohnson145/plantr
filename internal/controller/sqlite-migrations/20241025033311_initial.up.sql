@@ -5,10 +5,11 @@ CREATE TABLE challenge (
     value TEXT NOT NULL
 );
 
-CREATE TABLE github_release_version (
-    repo           TEXT NOT NULL PRIMARY KEY,
-    latest_version TEXT NOT NULL,
-    last_check     DATETIME
+CREATE TABLE github_release_asset (
+    hash         TEXT NOT NULL PRIMARY KEY,
+    os           TEXT NOT NULL,
+    arch         TEXT NOT NULL,
+    download_url TEXT NOT NULL
 );
 
 COMMIT;

@@ -341,6 +341,7 @@ func seedHash(x *parsingv2.Seed) string {
 		parts = []string{
 			"GithubRelease",
 			concrete.Repo,
+			concrete.Tag,
 		}
 	case *parsingv2.SystemPackage:
 		parts = []string{

@@ -86,7 +86,7 @@ func (s *SqlLite) ReadChallenge(ctx context.Context, id string) (*Challenge, err
 	return &rows[0], nil
 }
 
-func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *GithubRelease) (string, error) {
+func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *DBGithubRelease) (string, error) {
 	stmt := `
 		SELECT
 			download_url
@@ -99,7 +99,7 @@ func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *GithubRelease)
 			arch = :arch
 	`
 	
-	rows, err := hsqlx.RequireExactSelectNamedCtx[GithubRelease](ctx, 1, s.db, stmt, release)
+	rows, err := hsqlx.RequireExactSelectNamedCtx[DBGithubRelease](ctx, 1, s.db, stmt, release)
 	if err != nil {
 		if errors.Is(err, hsqlx.ErrNotFoundError) {
 			return "", nil
@@ -109,7 +109,7 @@ func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *GithubRelease)
 	return rows[0].DownloadURL, nil
 }
 
-func (s *SqlLite) WriteGithubRelease(ctx context.Context, release *GithubRelease) (error) {
+func (s *SqlLite) WriteGithubRelease(ctx context.Context, release *DBGithubRelease) (error) {
 	stmt := `
 		INSERT OR REPLACE INTO
 			github_release_cache

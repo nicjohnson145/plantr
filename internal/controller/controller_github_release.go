@@ -27,9 +27,12 @@ type githubAsset struct {
 }
 
 func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.GithubRelease, error) {
-	cachedUrl, err := c.store.ReadGithubRelease(ctx, &GithubRelease{
-		Repo: release.Repo,
-		Tag:  release.Tag,
+	hash := seedHash(&parsingv2.Seed{
+		Element: release,
+	})
+
+	cachedUrl, err := c.store.ReadGithubRelease(ctx, &DBGithubRelease{
+		Hash: hash,
 		OS:   node.OS,
 		Arch: node.Arch,
 	})
@@ -63,9 +66,8 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		}
 		downloadUrl = asset.DownloadUrl
 
-		cachedRelease := &GithubRelease{
-			Repo:        release.Repo,
-			Tag:         release.Tag,
+		cachedRelease := &DBGithubRelease{
+			Hash: hash,
 			OS:          node.OS,
 			Arch:        node.Arch,
 			DownloadURL: downloadUrl,

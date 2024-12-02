@@ -5,9 +5,8 @@ type Challenge struct {
 	Value string `db:"value"`
 }
 
-type GithubRelease struct {
-	Repo        string `db:"repo"`
-	Tag         string `db:"tag"`
+type DBGithubRelease struct {
+	Hash        string `db:"hash"`
 	OS          string `db:"os"`
 	Arch        string `db:"arch"`
 	DownloadURL string `db:"download_url"`
