@@ -29,6 +29,7 @@ type AgentConfig struct {
 	PrivateKey        string
 	ControllerAddress string
 	NowFunc           func() time.Time
+	HTTPClient        *http.Client
 }
 
 func NewAgent(conf AgentConfig) *Agent {
@@ -39,6 +40,7 @@ func NewAgent(conf AgentConfig) *Agent {
 		controllerAddress: conf.ControllerAddress,
 		mu:                &sync.Mutex{},
 		nowFunc:           conf.NowFunc,
+		httpClient:        conf.HTTPClient,
 	}
 
 	if a.nowFunc == nil {
@@ -60,6 +62,7 @@ type Agent struct {
 	token           string
 	tokenExpiration time.Time
 	nowFunc         func() time.Time
+	httpClient      *http.Client
 }
 
 func (a *Agent) logAndHandleError(err error, msg string) error {

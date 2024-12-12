@@ -13,8 +13,9 @@ require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.1
+	github.com/jarcoal/httpmock v1.3.1
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/mholt/archives v0.0.0-20241127045427-7738e768e146
+	github.com/mholt/archives v0.0.0-20241207175349-5e373c52f8aa
 	github.com/nicjohnson145/hlp v0.7.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/psanford/memfs v0.0.0-20241019191636-4ef911798f9b

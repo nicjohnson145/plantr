@@ -160,6 +160,8 @@ github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/jarcoal/httpmock v1.3.1 h1:iUx3whfZWVf3jT01hQTO/Eo5sAYtB2/rqaUuOtpInww=
+github.com/jarcoal/httpmock v1.3.1/go.mod h1:3yb8rc4BI7TCBhFY8ng0gjuLKJNquuDNiPaZjnENuYg=
 github.com/jarxorg/wfs v0.3.2 h1:yyxbqsOptpWLHVZYbm+3Ieb6lXMQBrLmglg4+4NV1x0=
 github.com/jarxorg/wfs v0.3.2/go.mod h1:pn4jy4b0NoGg5Gu603UGOjWbacCDBlUHW/895q9YQDA=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
@@ -199,8 +201,10 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=
 github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
-github.com/mholt/archives v0.0.0-20241127045427-7738e768e146 h1:J5iPEMtJb6Hof+R057IH6eCuB9fpaQ5hu4TvcROTFVM=
-github.com/mholt/archives v0.0.0-20241127045427-7738e768e146/go.mod h1:j/Ire/jm42GN7h90F5kzj6hf6ZFzEH66de+hmjEKu+I=
+github.com/maxatome/go-testdeep v1.12.0 h1:Ql7Go8Tg0C1D/uMMX59LAoYK7LffeJQ6X2T04nTH68g=
+github.com/maxatome/go-testdeep v1.12.0/go.mod h1:lPZc/HAcJMP92l7yI6TRz1aZN5URwUBUAfUNvrclaNM=
+github.com/mholt/archives v0.0.0-20241207175349-5e373c52f8aa h1:SzCiDuxF6489FegHHZe/ktxpRIDhu5IemNnWlW1Fquo=
+github.com/mholt/archives v0.0.0-20241207175349-5e373c52f8aa/go.mod h1:j/Ire/jm42GN7h90F5kzj6hf6ZFzEH66de+hmjEKu+I=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/nicjohnson145/hlp v0.7.0 h1:d0jWotvtN2fsqZolcVf217M7ojHnMS2+ZOlNsxS9UcI=
