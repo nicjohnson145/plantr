@@ -15,8 +15,15 @@ RUN go mod download
 
 COPY . .
 
-RUN task build-controller
+RUN task build-agent
 
-FROM alpine:latest
-COPY --from=builder /src/plantr-controller /bin/plantr-controller
-ENTRYPOINT ["/bin/plantr-controller"]
+FROM ubuntu:24.04
+RUN apt update && apt install -y ca-certificates sudo
+RUN useradd -ms /bin/bash newuser
+RUN groupadd passwordless
+RUN usermod -a -G passwordless newuser
+RUN echo "newuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+USER newuser
+WORKDIR /home/newuser
+COPY --from=builder /src/plantr-agent /bin/plantr-agent
+ENTRYPOINT ["/bin/plantr-agent"]

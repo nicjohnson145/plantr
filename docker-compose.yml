@@ -1,0 +1,25 @@
+services:
+
+  controller:
+    build:
+      context: .
+      args:
+        TASK: build-controller
+        BINARY_NAME: plantr-controller
+    environment:
+      JWT_SIGNING_KEY: tZtdk2HM4YGrmplrguqw23oilOG1QKgVTAw9udHi
+      GIT_URL: "https://github.com/nicjohnson145/plantr-test-repo.git"
+      SQLITE_DB_PATH: "/opt/controller.db"
+      GIT_ACCESS_TOKEN: $GIT_ACCESS_TOKEN
+
+  agent:
+    build:
+      context: .
+      dockerfile: functional-test-agent.Dockerfile
+    environment:
+      CONTROLLER_ADDRESS: controller:8080
+      POLL_INTERVAL: "0s"
+      NODE_ID: 01JBFPFH91WRC352YPQD8P4NHE
+      PRIVATE_KEY_PATH: "/opt/keypairs/test-repo-key"
+    volumes:
+    - ./hack/test-repo-keypairs:/opt/keypairs
