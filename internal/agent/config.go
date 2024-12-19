@@ -32,7 +32,7 @@ var (
 	DefaultLogRequests  = false
 	DefaultLogResponses = false
 
-	DefaultPollInterval = "60s"
+	DefaultPollInterval = "0s"
 )
 
 func InitConfig() {
