@@ -118,7 +118,7 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 				return archPat, nil
 			},
 			shouldMatch: true,
-			msg:         "attempting to filter assets by OS",
+			msg:         "attempting to filter assets by architecture",
 		},
 		{
 			function: func() (*regexp.Regexp, error) {
