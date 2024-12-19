@@ -23,7 +23,9 @@ RUN useradd -ms /bin/bash newuser
 RUN groupadd passwordless
 RUN usermod -a -G passwordless newuser
 RUN echo "newuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-USER newuser
 WORKDIR /home/newuser
+COPY hack/functional-test/test.sh test.sh
+RUN chmod +x /home/newuser/test.sh
+USER newuser
 COPY --from=builder /src/plantr-agent /bin/plantr-agent
 ENTRYPOINT ["/bin/plantr-agent"]

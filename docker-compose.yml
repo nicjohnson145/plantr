@@ -11,15 +11,22 @@ services:
       GIT_URL: "https://github.com/nicjohnson145/plantr-test-repo.git"
       SQLITE_DB_PATH: "/opt/controller.db"
       GIT_ACCESS_TOKEN: $GIT_ACCESS_TOKEN
+      #LOG_LEVEL: "trace"
+      #LOG_RESPONSES: "T"
+      #LOG_FORMAT: "human"
+    ports:
+    - 8080:8080
 
   agent:
     build:
       context: .
       dockerfile: functional-test-agent.Dockerfile
     environment:
-      CONTROLLER_ADDRESS: controller:8080
+      CONTROLLER_ADDRESS: "http://controller:8080"
       POLL_INTERVAL: "0s"
-      NODE_ID: 01JBFPFH91WRC352YPQD8P4NHE
+      NODE_ID: 01JFE97PWY4VGT8B0BNK4W37JJ
       PRIVATE_KEY_PATH: "/opt/keypairs/test-repo-key"
     volumes:
     - ./hack/test-repo-keypairs:/opt/keypairs
+    ports:
+    - 9090:8080

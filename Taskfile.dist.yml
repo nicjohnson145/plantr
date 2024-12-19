@@ -8,6 +8,8 @@ vars:
   CONTROLLER_BINARY: "plantr-controller"
   AGENT_BINARY: "plantr-agent"
   FUNCTIONAL_USER_HOME: "/tmp/plantr-tests"
+  GIT_ACCESS_TOKEN:
+    sh: "echo $GITHUB_PAT"
 
 tasks:
   migration:
@@ -91,27 +93,24 @@ tasks:
     - >
       jwt encode --secret "{{ .JWT_SIGNING_KEY }}" '{"node_id": "{{ .YOUR_HOST_ID }}"}'
 
-  docker:
-    desc: build all docker images
-    preconditions:
-    - sh: '[[ -n "${TAG}" ]]'
-      msg: Must specify $TAG
-    cmds:
-    - task: docker-controller
-    - task: docker-agent
-
   docker-controller:
     desc: build controller docker images
     preconditions:
     - sh: '[[ -n "${TAG}" ]]'
       msg: Must specify $TAG
     cmds:
-    - docker build . -t {{ .IMAGE_HOST }}/{{ .CONTROLLER_BINARY }}:$TAG --build-arg=TASK=build-controller --build-arg=BINARY_NAME={{ .CONTROLLER_BINARY }}
+    - docker build . -t {{ .IMAGE_HOST }}/{{ .CONTROLLER_BINARY }}:$TAG
 
-  docker-agent:
-    desc: build agent docker images
+  functional-test:
+    desc: run functional tests
     preconditions:
-    - sh: '[[ -n "${TAG}" ]]'
-      msg: Must specify $TAG
+    - sh: '[[ -n "${GITHUB_PAT}" ]]'
+      msg: Must specify GITHUB_PAT
+    env:
+      GIT_ACCESS_TOKEN: "{{ .GIT_ACCESS_TOKEN }}"
     cmds:
-    - docker build . -t {{ .IMAGE_HOST }}/{{ .AGENT_BINARY }}:$TAG --build-arg=TASK=build-agent --build-arg=BINARY_NAME={{ .AGENT_BINARY }}
+    - docker compose up -d --build --wait
+    - defer: docker compose down --volumes
+    - sleep 3 # TODO: this is trash, real health checks plz
+    - grpcurl -plaintext localhost:9090 plantr.agent.v1.AgentService/Sync
+    - docker compose exec -it agent /bin/bash /home/newuser/test.sh
