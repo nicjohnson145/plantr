@@ -281,3 +281,74 @@ func TestSystemPackage(t *testing.T) {
 		})
 	}
 }
+
+func TestGitRepo(t *testing.T) {
+	t.Parallel()
+
+	valid := func() *configv1.GitRepo {
+		return &configv1.GitRepo{
+			Url:      "some-url",
+			Location: "some-location",
+			Ref: &configv1.GitRepo_Tag{
+				Tag: "some-tag",
+			},
+		}
+	}
+
+	testData := []struct {
+		name    string
+		modFunc func(x *configv1.GitRepo)
+		err     string
+	}{
+		{
+			name:    "valid",
+			modFunc: func(x *configv1.GitRepo) {},
+			err:     "",
+		},
+		{
+			name:    "valid commit",
+			modFunc: func(x *configv1.GitRepo) {
+				x.Ref = &configv1.GitRepo_Commit{
+					Commit: "some-commit",
+				}
+			},
+			err:     "",
+		},
+		{
+			name:    "no url",
+			modFunc: func(x *configv1.GitRepo) {
+				x.Url = ""
+			},
+			err:     "url is a required field",
+		},
+		{
+			name:    "no location",
+			modFunc: func(x *configv1.GitRepo) {
+				x.Location = ""
+			},
+			err:     "location is a required field",
+		},
+		{
+			name:    "no ref",
+			modFunc: func(x *configv1.GitRepo) {
+				x.Ref = nil
+			},
+			err:     "ref: exactly one field is required in oneof",
+		},
+	}
+	for _, tc := range testData {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			validObj := valid()
+			tc.modFunc(validObj)
+
+			_, err := parseSeed_gitRepo(validObj)
+			if tc.err == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}

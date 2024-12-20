@@ -441,6 +441,17 @@ func (c *Controller) renderSeeds(node *parsingv2.Node, seeds []*parsingv2.Seed) 
 					SystemPackage: out,
 				},
 			}
+		case *parsingv2.GitRepo:
+			out, err := c.renderSeed_gitRepo(concrete, node)
+			if err != nil {
+				return nil, fmt.Errorf("error converting git repo: %w", err)
+			}
+			outSeeds[i] = &pbv1.Seed{
+				Element: &pbv1.Seed_GitRepo{
+					GitRepo: out,
+				},
+			}
+
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
 		}
@@ -489,4 +500,22 @@ func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node
 	}
 
 	return outPkg, nil
+}
+
+func (c *Controller) renderSeed_gitRepo(repo *parsingv2.GitRepo, node *parsingv2.Node) (*pbv1.GitRepo, error) {
+	outRepo := &pbv1.GitRepo{
+		Url: repo.URL,
+		Location: strings.ReplaceAll(repo.Location, "~", node.UserHome),
+	}
+
+	switch true {
+	case repo.Tag != nil:
+		outRepo.Ref = &pbv1.GitRepo_Tag{Tag: *repo.Tag}
+	case repo.Commit != nil:
+		outRepo.Ref = &pbv1.GitRepo_Commit{Commit: *repo.Commit}
+	default:
+		return nil, fmt.Errorf("unable to determine output ref")
+	}
+
+	return outRepo, nil
 }

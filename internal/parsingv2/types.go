@@ -50,3 +50,10 @@ type SystemPackageApt struct {
 type SystemPackage struct {
 	Apt *SystemPackageApt
 }
+
+type GitRepo struct {
+	URL      string
+	Location string
+	Tag      *string
+	Commit   *string
+}

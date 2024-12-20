@@ -58,12 +58,31 @@ message SystemPackage {
   };
 }
 
+message GitRepo {
+  string url = 1 [(buf.validate.field).cel = {
+    id: "GitRepo.url",
+    message: "url is a required field",
+    expression: "size(this) > 0",
+  }];
+  string location = 2 [(buf.validate.field).cel = {
+    id: "GitRepo.location",
+    message: "location is a required field",
+    expression: "size(this) > 0",
+  }];
+  oneof ref {
+    option (buf.validate.oneof).required = true;
+    string tag = 3;
+    string commit = 4;
+  }
+}
+
 message Seed {
   oneof element {
     option (buf.validate.oneof).required = true;
     ConfigFile config_file = 1;
     GithubRelease github_release = 2;
     SystemPackage system_package = 3;
+    GitRepo git_repo = 4;
   }
 }
 

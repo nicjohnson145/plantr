@@ -87,28 +87,24 @@ func parseNode(node *configv1.Node) (*Node, error) {
 func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 	outSeeds := make([]*Seed, len(seeds))
 	for i, s := range seeds {
+		var seed *Seed
+		var err error
 		switch concrete := s.Element.(type) {
 		case *configv1.Seed_ConfigFile:
-			seed, err := parseSeed_configFile(fsys, concrete.ConfigFile)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing item %v: %w", i, err)
-			}
-			outSeeds[i] = seed
+			seed, err = parseSeed_configFile(fsys, concrete.ConfigFile)
 		case *configv1.Seed_GithubRelease:
-			seed, err := parseSeed_githubRelease(concrete.GithubRelease)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing item %v: %w", i, err)
-			}
-			outSeeds[i] = seed
+			seed, err = parseSeed_githubRelease(concrete.GithubRelease)
 		case *configv1.Seed_SystemPackage:
-			seed, err := parseSeed_systemPackage(concrete.SystemPackage)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing item %v: %w", i, err)
-			}
-			outSeeds[i] = seed
+			seed, err = parseSeed_systemPackage(concrete.SystemPackage)
+		case *configv1.Seed_GitRepo:
+			seed, err = parseSeed_gitRepo(concrete.GitRepo)
 		default:
 			return nil, fmt.Errorf("unhandled seed type %T", concrete)
 		}
+		if err != nil {
+			return nil, fmt.Errorf("error parsing item %v: %w", i, err)
+		}
+		outSeeds[i] = seed
 	}
 
 	return outSeeds, nil
@@ -200,5 +196,28 @@ func parseSeed_systemPackage(pkg *configv1.SystemPackage) (*Seed, error) {
 
 	return &Seed{
 		Element: outPkg,
+	}, nil
+}
+
+func parseSeed_gitRepo(repo *configv1.GitRepo) (*Seed, error) {
+	if err := protovalidate.Validate(repo); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
+	}
+
+	outRepo := &GitRepo{
+		URL: repo.Url,
+		Location: repo.Location,
+	}
+	switch concrete := repo.Ref.(type) {
+		case *configv1.GitRepo_Tag:
+			outRepo.Tag = hlp.Ptr(concrete.Tag)
+		case *configv1.GitRepo_Commit:
+			outRepo.Commit = hlp.Ptr(concrete.Commit)
+		default:
+			return nil, fmt.Errorf("unhandled ref type of %T", concrete)
+	}
+
+	return &Seed{
+		Element: outRepo,
 	}, nil
 }
