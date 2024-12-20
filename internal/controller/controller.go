@@ -353,8 +353,22 @@ func seedHash(x *parsingv2.Seed) string {
 				concrete.Apt.Name,
 			)
 		}
+	case *parsingv2.GitRepo:
+		parts = []string{
+			"GitRepo",
+			concrete.URL,
+			concrete.Location,
+		}
+		switch true {
+		case concrete.Commit != nil:
+			parts = append(parts, *concrete.Commit)
+		case concrete.Tag != nil:
+			parts = append(parts, *concrete.Tag)
+		default:
+			panic(fmt.Sprintf("seedHash: unhandled ref type for GitRepo"))
+		}
 	default:
-		panic(fmt.Sprintf("unhandled seed type %T", concrete))
+		panic(fmt.Sprintf("seedHash: unhandled seed type %T", concrete))
 	}
 
 	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, "")))) //nolint: gosec // its a hash, it doesnt have to be cryptographically secure

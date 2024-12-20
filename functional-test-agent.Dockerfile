@@ -18,7 +18,7 @@ COPY . .
 RUN task build-agent
 
 FROM ubuntu:24.04
-RUN apt update && apt install -y ca-certificates sudo
+RUN apt update && apt install -y ca-certificates sudo git
 RUN useradd -ms /bin/bash newuser
 RUN groupadd passwordless
 RUN usermod -a -G passwordless newuser

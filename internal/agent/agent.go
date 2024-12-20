@@ -164,6 +164,10 @@ func (a *Agent) executeSeeds(seeds []*controllerv1.Seed) error {
 			if err := a.executeSeed_systemPackage(concrete.SystemPackage); err != nil {
 				errs = append(errs, fmt.Errorf("error executing system package: %w", err))
 			}
+		case *controllerv1.Seed_GitRepo:
+			if err := a.executeSeed_gitRepo(concrete.GitRepo); err != nil {
+				errs = append(errs, fmt.Errorf("error executing git repo: %w", err))
+			}
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
 		}
