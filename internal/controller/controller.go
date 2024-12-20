@@ -317,7 +317,7 @@ func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.
 		return nil, c.logAndHandleError(err, "error collecting seeds")
 	}
 
-	pbSeeds, err := c.renderSeeds(node, seeds)
+	pbSeeds, err := c.renderSeeds(ctx, node, seeds)
 	if err != nil {
 		return nil, c.logAndHandleError(err, "error rendering seeds")
 	}
@@ -412,7 +412,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, *parsingv2.
 	return seedSet.AsSlice(), node, nil
 }
 
-func (c *Controller) renderSeeds(node *parsingv2.Node, seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) {
+func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) {
 	// Do this once per render instead of once per config file
 	if err := c.ensureVault(); err != nil {
 		return nil, fmt.Errorf("error ensuring vault data: %w", err)
@@ -436,7 +436,7 @@ func (c *Controller) renderSeeds(node *parsingv2.Node, seeds []*parsingv2.Seed) 
 				},
 			}
 		case *parsingv2.GithubRelease:
-			out, err := c.renderSeed_githubRelease(concrete, node)
+			out, err := c.renderSeed_githubRelease(ctx, concrete, node)
 			if err != nil {
 				return nil, fmt.Errorf("error converting github release: %w", err)
 			}

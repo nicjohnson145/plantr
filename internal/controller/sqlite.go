@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -83,4 +84,53 @@ func (s *SqlLite) ReadChallenge(ctx context.Context, id string) (*Challenge, err
 	}
 
 	return &rows[0], nil
+}
+
+func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *GithubRelease) (string, error) {
+	stmt := `
+		SELECT
+			download_url
+		FROM
+			github_release_cache
+		WHERE
+			repo = :repo AND
+			tag = :tag AND
+			os = :os AND
+			arch = :arch
+	`
+	
+	rows, err := hsqlx.RequireExactSelectNamedCtx[GithubRelease](ctx, 1, s.db, stmt, release)
+	if err != nil {
+		if errors.Is(err, hsqlx.ErrNotFoundError) {
+			return "", nil
+		}
+		return "", fmt.Errorf("error selecting: %w", err)
+	}
+	return rows[0].DownloadURL, nil
+}
+
+func (s *SqlLite) WriteGithubRelease(ctx context.Context, release *GithubRelease) (error) {
+	stmt := `
+		INSERT OR REPLACE INTO
+			github_release_cache
+			(
+				repo,
+				tag,
+				os,
+				arch,
+				download_url
+			)
+		VALUES
+			(
+				:repo,
+				:tag,
+				:os,
+				:arch,
+				:download_url
+			)
+	`
+	if _, err := s.db.NamedExecContext(ctx, stmt, release); err != nil {
+		return fmt.Errorf("error upserting cache: %w", err)
+	}
+	return nil
 }

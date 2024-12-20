@@ -26,30 +26,57 @@ type githubAsset struct {
 	Url         string `json:"url"`
 }
 
-func (c *Controller) renderSeed_githubRelease(release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.GithubRelease, error) {
-	var resp githubTagResponse
-	builder := requests.
-		URL("https://api.github.com").
-		Pathf("repos/%v/releases/tags/%v", release.Repo, release.Tag).
-		Client(c.httpClient).
-		ToJSON(&resp)
-	if c.githubReleaseToken == "" {
-		c.log.Warn().Msg("making un-authenticated request to github API, this will likely result in being very quickly rate limited")
-	} else {
-		builder = builder.Header("Authorization", c.githubReleaseToken)
-	}
-
-	if err := builder.Fetch(context.Background()); err != nil {
-		return nil, fmt.Errorf("error getting release assets: %w", err)
-	}
-
-	asset, err := c.getAssetForOSArch(release, node, resp.Assets)
+func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.GithubRelease, error) {
+	cachedUrl, err := c.store.ReadGithubRelease(ctx, &GithubRelease{
+		Repo: release.Repo,
+		Tag:  release.Tag,
+		OS:   node.OS,
+		Arch: node.Arch,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("error filtering release assets: %w", err)
+		return nil, fmt.Errorf("error reading cache: %w", err)
+	}
+
+	var downloadUrl string
+	if cachedUrl != "" {
+		downloadUrl = cachedUrl
+	} else {
+		var resp githubTagResponse
+		builder := requests.
+			URL("https://api.github.com").
+			Pathf("repos/%v/releases/tags/%v", release.Repo, release.Tag).
+			Client(c.httpClient).
+			ToJSON(&resp)
+		if c.githubReleaseToken == "" {
+			c.log.Warn().Msg("making un-authenticated request to github API, this will likely result in being very quickly rate limited")
+		} else {
+			builder = builder.Header("Authorization", c.githubReleaseToken)
+		}
+
+		if err := builder.Fetch(context.Background()); err != nil {
+			return nil, fmt.Errorf("error getting release assets: %w", err)
+		}
+
+		asset, err := c.getAssetForOSArch(release, node, resp.Assets)
+		if err != nil {
+			return nil, fmt.Errorf("error filtering release assets: %w", err)
+		}
+		downloadUrl = asset.DownloadUrl
+
+		cachedRelease := &GithubRelease{
+			Repo:        release.Repo,
+			Tag:         release.Tag,
+			OS:          node.OS,
+			Arch:        node.Arch,
+			DownloadURL: downloadUrl,
+		}
+		if err := c.store.WriteGithubRelease(ctx, cachedRelease); err != nil {
+			return nil, fmt.Errorf("error writing result to cache: %w", err)
+		}
 	}
 
 	outRelease := &pbv1.GithubRelease{
-		DownloadUrl:          asset.DownloadUrl,
+		DownloadUrl:          downloadUrl,
 		DestinationDirectory: node.BinDir,
 		BinaryNameOverride:   release.BinaryNameOverride,
 	}

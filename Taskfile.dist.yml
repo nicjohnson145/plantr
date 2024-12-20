@@ -24,7 +24,7 @@ tasks:
 
   migrate-sqlite:
     internal: true
-    dir: internal/storage/sqlite-migrations
+    dir: internal/controller/sqlite-migrations
     cmds:
     - migrate create -ext sql {{ .NAME }}
 
