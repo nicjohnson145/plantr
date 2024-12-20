@@ -13,3 +13,4 @@ nodes:
   - foo
   os: linux
   arch: amd64
+  package_manager: apt

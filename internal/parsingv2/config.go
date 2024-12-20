@@ -72,14 +72,15 @@ func parseNode(node *configv1.Node) (*Node, error) {
 	}
 
 	return &Node{
-		ID:        node.Id,
-		Hostname:  node.Hostname,
-		PublicKey: string(pubKeyBytes),
-		Roles:     node.Roles,
-		UserHome:  node.UserHome,
-		BinDir:    hlp.Ternary(node.BinDir == "", filepath.Join(node.UserHome, "bin"), node.BinDir),
-		OS:        node.Os,
-		Arch:      node.Arch,
+		ID:             node.Id,
+		Hostname:       node.Hostname,
+		PublicKey:      string(pubKeyBytes),
+		Roles:          node.Roles,
+		UserHome:       node.UserHome,
+		BinDir:         hlp.Ternary(node.BinDir == "", filepath.Join(node.UserHome, "bin"), node.BinDir),
+		OS:             node.Os,
+		Arch:           node.Arch,
+		PackageManager: node.PackageManager,
 	}, nil
 }
 

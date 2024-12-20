@@ -6,3 +6,6 @@ set -euo pipefail
 
 # a config file laid down
 test -f ~/some-dir/some-config || "~/some-dir/some-config not present"
+
+# htop should be installed
+which htop

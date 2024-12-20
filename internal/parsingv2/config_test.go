@@ -80,11 +80,12 @@ func TestNode(t *testing.T) {
 
 	valid := func() *configv1.Node {
 		return &configv1.Node{
-			Id:           "some-id",
-			PublicKeyB64: base64.StdEncoding.EncodeToString([]byte(`some-key`)),
-			UserHome:     "user-home",
-			Os:           "linux",
-			Arch:         "amd64",
+			Id:             "some-id",
+			PublicKeyB64:   base64.StdEncoding.EncodeToString([]byte(`some-key`)),
+			UserHome:       "user-home",
+			Os:             "linux",
+			Arch:           "amd64",
+			PackageManager: "apt",
 		}
 	}
 

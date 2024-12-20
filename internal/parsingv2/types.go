@@ -3,14 +3,15 @@ package parsingv2
 import "regexp"
 
 type Node struct {
-	ID        string
-	Hostname  string
-	PublicKey string
-	Roles     []string
-	UserHome  string
-	BinDir    string
-	OS        string
-	Arch      string
+	ID             string
+	Hostname       string
+	PublicKey      string
+	Roles          []string
+	UserHome       string
+	BinDir         string
+	OS             string
+	Arch           string
+	PackageManager string
 }
 
 type Seed struct {

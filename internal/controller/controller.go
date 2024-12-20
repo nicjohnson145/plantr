@@ -432,7 +432,7 @@ func (c *Controller) renderSeeds(node *parsingv2.Node, seeds []*parsingv2.Seed) 
 				},
 			}
 		case *parsingv2.SystemPackage:
-			out, err := c.renderSeed_systemPackage(concrete)
+			out, err := c.renderSeed_systemPackage(concrete, node)
 			if err != nil {
 				return nil, fmt.Errorf("error converting system package: %w", err)
 			}
@@ -471,13 +471,21 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *par
 	}, nil
 }
 
-func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage) (*pbv1.SystemPackage, error) {
+func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node *parsingv2.Node) (*pbv1.SystemPackage, error) {
 	outPkg := &pbv1.SystemPackage{}
 
-	if pkg.Apt != nil {
-		outPkg.Apt = &pbv1.SystemPackage_Apt{
-			Name: pkg.Apt.Name,
+	switch node.PackageManager {
+	case "apt":
+		if pkg.Apt == nil {
+			return nil, fmt.Errorf("node has configured package manager 'apt', but no apt apt package configured")
 		}
+		outPkg.Pkg = &pbv1.SystemPackage_Apt{
+			Apt: &pbv1.SystemPackage_AptPkg{
+				Name: pkg.Apt.Name,
+			},
+		}
+	default:
+		return nil, fmt.Errorf("unhandled package manager %v", node.PackageManager)
 	}
 
 	return outPkg, nil

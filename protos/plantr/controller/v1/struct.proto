@@ -24,10 +24,12 @@ message GithubRelease {
 }
 
 message SystemPackage {
-  message Apt {
+  message AptPkg {
     string name = 1;
   }
-  Apt apt = 1;
+  oneof pkg {
+    AptPkg apt = 1;
+  }
 }
 
 message Seed {

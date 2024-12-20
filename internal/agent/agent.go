@@ -160,6 +160,10 @@ func (a *Agent) executeSeeds(seeds []*controllerv1.Seed) error {
 			if err := a.executeSeed_githubRelease(concrete.GithubRelease); err != nil {
 				errs = append(errs, fmt.Errorf("error executing github release: %w", err))
 			}
+		case *controllerv1.Seed_SystemPackage:
+			if err := a.executeSeed_systemPackage(concrete.SystemPackage); err != nil {
+				errs = append(errs, fmt.Errorf("error executing system package: %w", err))
+			}
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
 		}
@@ -176,6 +180,25 @@ func (a *Agent) executeSeed_configFile(seed *controllerv1.ConfigFile) error {
 	// TODO: configurable permissions
 	if err := os.WriteFile(seed.Destination, []byte(seed.Content), 0644); err != nil { //nolint:gosec // ignore until configurable permissions
 		return fmt.Errorf("error creating file: %w", err)
+	}
+	return nil
+}
+
+func (a *Agent) executeSeed_systemPackage(seed *controllerv1.SystemPackage) error {
+	switch concrete := seed.Pkg.(type) {
+	case *controllerv1.SystemPackage_Apt:
+		return a.executeSeed_systemPackage_apt(concrete.Apt)
+	default:
+		return fmt.Errorf("unhandled system package type of %T", concrete)
+	}
+}
+
+func (a *Agent) executeSeed_systemPackage_apt(pkg *controllerv1.SystemPackage_AptPkg) error {
+	// TODO: proper version support, inventory tracking, and LBYL. Probably also some `apt update` cached for the whole
+	// run or something
+	_, stderr, err := ExecuteOSCommand("/bin/sh", "-c", fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive apt install -y %v", pkg.Name))
+	if err != nil {
+		return fmt.Errorf("error during installation: %v\n%v", err, stderr)
 	}
 	return nil
 }

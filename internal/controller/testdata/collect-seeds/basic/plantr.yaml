@@ -25,3 +25,4 @@ nodes:
   - bar
   os: linux
   arch: amd64
+  package_manager: apt

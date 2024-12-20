@@ -100,6 +100,11 @@ message Node {
     message: 'arch is required to be one of ["amd64", "arm64"]',
     expression: "this in ['amd64', 'arm64']"
   }];
+  string package_manager = 9 [(buf.validate.field).cel = {
+    id: "Node.package_manager",
+    message: 'package_manager is required to be one of ["apt"]',
+    expression: "this in ['apt']"
+  }];
 }
 
 message Config {
