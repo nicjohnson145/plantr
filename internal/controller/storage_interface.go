@@ -13,8 +13,8 @@ import (
 type StorageClient interface {
 	WriteChallenge(ctx context.Context, challenge *Challenge) error
 	ReadChallenge(ctx context.Context, id string) (*Challenge, error)
-	ReadGithubRelease(ctx context.Context, release *DBGithubRelease) (string, error)
-	WriteGithubRelease(ctx context.Context, release *DBGithubRelease) error
+	WriteGithubReleaseAsset(ctx context.Context, asset *DBGithubRelease) error
+	ReadGithubReleaseAsset(ctx context.Context, asset *DBGithubRelease) (string, error)
 }
 
 func NewStorageClientFromEnv(logger zerolog.Logger) (StorageClient, func(), error) {

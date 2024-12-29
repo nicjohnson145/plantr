@@ -23,27 +23,24 @@ type githubTagResponse struct {
 type githubAsset struct {
 	Name        string `json:"name"`
 	DownloadUrl string `json:"browser_download_url"`
-	Url         string `json:"url"`
 }
 
 func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.GithubRelease, error) {
-	hash := seedHash(&parsingv2.Seed{
-		Element: release,
-	})
+	c.log.Debug().Msgf("rendering github release %v/%v", release.Repo, release.Tag)
 
-	cachedUrl, err := c.store.ReadGithubRelease(ctx, &DBGithubRelease{
-		Hash: hash,
+	c.log.Debug().Msg("reading asset cache")
+	assertUrl, err := c.store.ReadGithubReleaseAsset(ctx, &DBGithubRelease{
+		Hash: c.hashFunc(&parsingv2.Seed{
+			Element: release,
+		}),
 		OS:   node.OS,
 		Arch: node.Arch,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error reading cache: %w", err)
+		return nil, fmt.Errorf("error reading asset cache: %w", err)
 	}
-
-	var downloadUrl string
-	if cachedUrl != "" {
-		downloadUrl = cachedUrl
-	} else {
+	if assertUrl == "" {
+		c.log.Debug().Msg("cache miss, attempting to get release asset from GitHub")
 		var resp githubTagResponse
 		builder := requests.
 			URL("https://api.github.com").
@@ -64,21 +61,24 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		if err != nil {
 			return nil, fmt.Errorf("error filtering release assets: %w", err)
 		}
-		downloadUrl = asset.DownloadUrl
+
+		assertUrl = asset.DownloadUrl
 
 		cachedRelease := &DBGithubRelease{
-			Hash: hash,
+			Hash: c.hashFunc(&parsingv2.Seed{
+				Element: release,
+			}),
 			OS:          node.OS,
 			Arch:        node.Arch,
-			DownloadURL: downloadUrl,
+			DownloadURL: assertUrl,
 		}
-		if err := c.store.WriteGithubRelease(ctx, cachedRelease); err != nil {
+		if err := c.store.WriteGithubReleaseAsset(ctx, cachedRelease); err != nil {
 			return nil, fmt.Errorf("error writing result to cache: %w", err)
 		}
 	}
 
 	outRelease := &pbv1.GithubRelease{
-		DownloadUrl:          downloadUrl,
+		DownloadUrl:          assertUrl,
 		DestinationDirectory: node.BinDir,
 		BinaryNameOverride:   release.BinaryNameOverride,
 	}

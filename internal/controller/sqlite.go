@@ -109,7 +109,7 @@ func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *DBGithubReleas
 	return rows[0].DownloadURL, nil
 }
 
-func (s *SqlLite) WriteGithubRelease(ctx context.Context, release *DBGithubRelease) (error) {
+func (s *SqlLite) WriteGithubReleaseAsset(ctx context.Context, release *DBGithubRelease) (error) {
 	stmt := `
 		INSERT OR REPLACE INTO
 			github_release_cache
@@ -133,4 +133,25 @@ func (s *SqlLite) WriteGithubRelease(ctx context.Context, release *DBGithubRelea
 		return fmt.Errorf("error upserting cache: %w", err)
 	}
 	return nil
+}
+
+func (s *SqlLite) ReadGithubReleaseAsset(ctx context.Context, asset *DBGithubRelease) (string, error) {
+	stmt := `
+		SELECT
+			*
+		FROM
+			github_release_asset
+		WHERE
+			hash = :hash AND
+			os = :os AND
+			arch = :arch
+	`
+	rows, err := hsqlx.RequireExactSelectNamedCtx[DBGithubRelease](ctx, 1, s.db, stmt, asset)
+	if err != nil {
+		if errors.Is(err, hsqlx.ErrNotFoundError) {
+			return "", nil
+		}
+		return "", fmt.Errorf("error selecting: %w", err)
+	}
+	return rows[0].DownloadURL, nil
 }

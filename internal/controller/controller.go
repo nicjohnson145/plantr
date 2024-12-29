@@ -3,7 +3,6 @@ package controller
 import (
 	"bytes"
 	"context"
-	"crypto/md5" //nolint: gosec // its used for hashing, it doesnt have to be cryptographically secure
 	"errors"
 	"fmt"
 	"net/http"
@@ -47,7 +46,8 @@ type ControllerConfig struct {
 	HttpClient         *http.Client
 	GithubReleaseToken string
 
-	NowFunc func() time.Time // for unit tests
+	NowFunc  func() time.Time             // for unit tests
+	HashFunc func(*parsingv2.Seed) string // for unit tests
 }
 
 func NewController(conf ControllerConfig) (*Controller, error) {
@@ -68,12 +68,16 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		githubReleaseToken: conf.GithubReleaseToken,
 		configMu:           &sync.RWMutex{},
 		vaultMu:            &sync.RWMutex{},
+		hashFunc:           conf.HashFunc,
 	}
 
 	if ctrl.nowFunc == nil {
 		ctrl.nowFunc = func() time.Time {
 			return time.Now().UTC()
 		}
+	}
+	if ctrl.hashFunc == nil {
+		ctrl.hashFunc = seedHash
 	}
 
 	return ctrl, nil
@@ -96,7 +100,8 @@ type Controller struct {
 	vaultMu   *sync.RWMutex
 	vaultData *vaultData
 
-	nowFunc func() time.Time // for unit tests
+	nowFunc  func() time.Time             // for unit tests
+	hashFunc func(*parsingv2.Seed) string // for unit tests
 }
 
 func (c *Controller) now() time.Time {
@@ -327,54 +332,6 @@ func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.
 	}), nil
 }
 
-func seedHash(x *parsingv2.Seed) string {
-	var parts []string
-
-	switch concrete := x.Element.(type) {
-	case *parsingv2.ConfigFile:
-		parts = []string{
-			"ConfigFile",
-			concrete.TemplateContent,
-			concrete.Destination,
-		}
-	case *parsingv2.GithubRelease:
-		parts = []string{
-			"GithubRelease",
-			concrete.Repo,
-			concrete.Tag,
-		}
-	case *parsingv2.SystemPackage:
-		parts = []string{
-			"SystemPackage",
-		}
-		if concrete.Apt != nil {
-			parts = append(
-				parts,
-				"APT",
-				concrete.Apt.Name,
-			)
-		}
-	case *parsingv2.GitRepo:
-		parts = []string{
-			"GitRepo",
-			concrete.URL,
-			concrete.Location,
-		}
-		switch true {
-		case concrete.Commit != nil:
-			parts = append(parts, *concrete.Commit)
-		case concrete.Tag != nil:
-			parts = append(parts, *concrete.Tag)
-		default:
-			panic(fmt.Sprintf("seedHash: unhandled ref type for GitRepo"))
-		}
-	default:
-		panic(fmt.Sprintf("seedHash: unhandled seed type %T", concrete))
-	}
-
-	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, "")))) //nolint: gosec // its a hash, it doesnt have to be cryptographically secure
-}
-
 func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, *parsingv2.Node, error) {
 	if err := c.ensureConfig(); err != nil {
 		return nil, nil, fmt.Errorf("error ensuring config: %w", err)
@@ -397,7 +354,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, *parsingv2.
 	}
 
 	c.log.Trace().Msg("collecting seeds from defined roles")
-	seedSet := hashset.New(seedHash)
+	seedSet := hashset.New(c.hashFunc)
 	for _, roleName := range node.Roles {
 		c.log.Trace().Msgf("collecting from role %v", roleName)
 		seeds, ok := conf.Roles[roleName]
