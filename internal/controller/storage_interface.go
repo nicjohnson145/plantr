@@ -11,6 +11,7 @@ import (
 )
 
 type StorageClient interface {
+	Purge(ctx context.Context) error
 	WriteChallenge(ctx context.Context, challenge *Challenge) error
 	ReadChallenge(ctx context.Context, id string) (*Challenge, error)
 	WriteGithubReleaseAsset(ctx context.Context, asset *DBGithubRelease) error

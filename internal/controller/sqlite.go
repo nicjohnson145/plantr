@@ -42,6 +42,25 @@ func (s *SqlLite) init() error {
 	return nil
 }
 
+func (s *SqlLite) Purge(ctx context.Context) error {
+	tables := []string{
+		"challenge",
+		"github_release_asset",
+	}
+	err := hsqlx.WithTransaction(s.db, func(txn *sqlx.Tx) error {
+		for _, tbl := range tables {
+			if _, err := txn.ExecContext(ctx, fmt.Sprintf("DELETE FROM %v", tbl)); err != nil {
+				return fmt.Errorf("error deleting from %v: %w", tbl, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("error purging: %w", err)
+	}
+	return nil
+}
+
 func (s *SqlLite) WriteChallenge(ctx context.Context, challenge *Challenge) error {
 	stmt := `
 		INSERT INTO
