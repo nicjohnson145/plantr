@@ -21,11 +21,19 @@ func TestStorageIntegration(t *testing.T) {
 		const (
 			challengeID    = "some-challenge-id"
 			challengeValue = "some-challenge-value"
+
+			assetHash = "asset-hash"
+			assetOS   = "asset-os"
+			assetArch = "asset-arch"
+			assetURL  = "asset-url"
 		)
+
+		// Start by purging everything, just in case
+		require.NoError(t, store.Purge(ctx))
 
 		// Write a challenge
 		require.NoError(t, store.WriteChallenge(ctx, &Challenge{
-			ID: challengeID,
+			ID:    challengeID,
 			Value: challengeValue,
 		}))
 
@@ -33,6 +41,23 @@ func TestStorageIntegration(t *testing.T) {
 		gotChallenge, err := store.ReadChallenge(ctx, challengeID)
 		require.NoError(t, err)
 		require.Equal(t, challengeValue, gotChallenge.Value)
+
+		// Write a release asset
+		require.NoError(t, store.WriteGithubReleaseAsset(ctx, &DBGithubRelease{
+			Hash:        assetHash,
+			OS:          assetOS,
+			Arch:        assetArch,
+			DownloadURL: assetURL,
+		}))
+
+		// Read the asset back
+		gotAsset, err := store.ReadGithubReleaseAsset(ctx, &DBGithubRelease{
+			Hash: assetHash,
+			OS:   assetOS,
+			Arch: assetArch,
+		})
+		require.NoError(t, err)
+		require.Equal(t, assetURL, gotAsset)
 	}
 
 	t.Run("sqlite", func(t *testing.T) {
