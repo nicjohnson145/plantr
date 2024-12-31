@@ -18,6 +18,18 @@ func seedHash(x *parsingv2.Seed) string {
 			concrete.TemplateContent,
 			concrete.Destination,
 		}
+	case *parsingv2.GitRepo:
+		parts = []string{
+			"GitRepo",
+			concrete.URL,
+			concrete.Location,
+		}
+		if concrete.Tag != nil {
+			parts = append(parts, *concrete.Tag)
+		}
+		if concrete.Commit != nil {
+			parts = append(parts, *concrete.Commit)
+		}
 	case *parsingv2.GithubRelease:
 		parts = []string{
 			"GithubRelease",
