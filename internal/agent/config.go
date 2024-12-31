@@ -1,11 +1,23 @@
 package agent
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/viper"
 )
+
+//go:generate go-enum -f $GOFILE -marshal -names
+
+/*
+ENUM(
+sqlite
+)
+*/
+type StorageKind string
 
 const (
 	Port = "port"
@@ -20,8 +32,8 @@ const (
 	NodeID            = "node.id"
 	PollInterval      = "poll_interval"
 
-	VaultEnabled          = "vault.enabled"
-	VaultHashicorpAddress = "vault.hashicorp.address"
+	StorageType  = "storage.type"
+	SqliteDBPath = "sqlite.db_path"
 )
 
 var (
@@ -32,10 +44,18 @@ var (
 	DefaultLogRequests  = false
 	DefaultLogResponses = false
 
+	DefaultStorageType  = StorageKindSqlite.String()
+	DefaultSqliteDBPath = "<HOME>/.cache/plantr/storage.db"
+
 	DefaultPollInterval = "0s"
 )
 
-func InitConfig() {
+func InitConfig() error {
+	cachedir, err := os.UserCacheDir()
+	if err != nil {
+		return fmt.Errorf("error getting user cache dir: %w", err)
+	}
+
 	viper.SetDefault(Port, DefaultPort)
 
 	viper.SetDefault(LoggingLevel, DefaultLogLevel)
@@ -45,6 +65,11 @@ func InitConfig() {
 
 	viper.SetDefault(PollInterval, DefaultPollInterval)
 
+	viper.SetDefault(StorageType, DefaultStorageType)
+	viper.SetDefault(SqliteDBPath, filepath.Join(cachedir, "plantr", "storage.db"))
+
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	return nil
 }

@@ -59,7 +59,7 @@ var (
 
 	DefaultStorageType = StorageKindSqlite.String()
 
-	DefaultSqliteDBPath = "/var/plantr/storage.db"
+	DefaultSqliteDBPath = "/var/plantr/controller/storage.db"
 
 	DefaultGitType = GitKindGithub.String()
 

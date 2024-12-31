@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -30,7 +31,12 @@ func main() {
 }
 
 func run() error {
-	agent.InitConfig()
+	if err := agent.InitConfig(); err != nil {
+		newErr := fmt.Errorf("error initializing config: %w", err)
+		fmt.Println(newErr)
+		return newErr
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

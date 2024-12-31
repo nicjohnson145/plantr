@@ -12,19 +12,35 @@ vars:
     sh: "echo $GITHUB_PAT"
 
 tasks:
-  migration:
-    desc: create a new migration
+  migrate-controller:
+    desc: create a new controller migration
     preconditions:
     - sh: '[[ -n "${NAME}" ]]'
       msg: 'Must specify $NAME'
     cmds:
-    - task: migrate-sqlite
+    - task: migrate-controller-sqlite
       vars:
         NAME: "$NAME"
 
-  migrate-sqlite:
+  migrate-agent:
+    desc: create a new agent migration
+    preconditions:
+    - sh: '[[ -n "${NAME}" ]]'
+      msg: 'Must specify $NAME'
+    cmds:
+    - task: migrate-agent-sqlite
+      vars:
+        NAME: "$NAME"
+
+  migrate-controller-sqlite:
     internal: true
     dir: internal/controller/sqlite-migrations
+    cmds:
+    - migrate create -ext sql {{ .NAME }}
+
+  migrate-agent-sqlite:
+    internal: true
+    dir: internal/agent/sqlite-migrations
     cmds:
     - migrate create -ext sql {{ .NAME }}
 
