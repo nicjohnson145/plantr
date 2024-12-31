@@ -117,7 +117,7 @@ func (a *Agent) executeSeed_githubRelease(seed *controllerv1.GithubRelease) erro
 	}
 
 	outPath := filepath.Join(seed.DestinationDirectory, destName)
-	if err := os.WriteFile(outPath, binaryContent, 0755); err != nil { //nolint:gosec // i mean...its an executable, it has to like.... be executable?
+	if err := os.WriteFile(outPath, binaryContent, 0755); err != nil { //nolint: gosec // it has to be executable, its an executable binary
 		return fmt.Errorf("error writing final output path: %w", err)
 	}
 

@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec // its for fingerprinting, it doesnt have to be cryptographically secure
 	"fmt"
 	"strings"
 

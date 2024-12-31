@@ -131,18 +131,16 @@ func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *DBGithubReleas
 func (s *SqlLite) WriteGithubReleaseAsset(ctx context.Context, release *DBGithubRelease) (error) {
 	stmt := `
 		INSERT OR REPLACE INTO
-			github_release_cache
+			github_release_asset
 			(
-				repo,
-				tag,
+				hash,
 				os,
 				arch,
 				download_url
 			)
 		VALUES
 			(
-				:repo,
-				:tag,
+				:hash,
 				:os,
 				:arch,
 				:download_url
