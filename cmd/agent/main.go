@@ -137,7 +137,7 @@ func run() error {
 			for {
 				select {
 				case <-ticker.C:
-					_, err := worker.Sync(&agentv1.SyncRequest{})
+					_, err := worker.Sync(context.TODO(), &agentv1.SyncRequest{})
 					if err != nil {
 						if errors.Is(err, agent.ErrSyncInProgressError) {
 							logger.Info().Msg("periodic sync aborted, sync already in progress")

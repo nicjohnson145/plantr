@@ -1,8 +1,28 @@
 BEGIN;
 
-CREATE TABLE inventory_config_file (
-    path TEXT NOT NULL,
-    PRIMARY KEY (path)
+CREATE TABLE agent_inventory ( 
+    hash     TEXT NOT NULL,
+    path     TEXT,
+    package  TEXT
+    PRIMARY KEY (hash)
 );
+
+CREATE UNIQUE INDEX
+    only_one_path 
+ON
+    agent_inventory
+    (
+        path
+    )
+;
+
+CREATE UNIQUE INDEX
+    only_one_package
+ON
+    agent_inventory
+    (
+        package
+    )
+;
 
 COMMIT;

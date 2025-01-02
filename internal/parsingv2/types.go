@@ -15,6 +15,7 @@ type Node struct {
 }
 
 type Seed struct {
+	Hash    string
 	Element any
 }
 

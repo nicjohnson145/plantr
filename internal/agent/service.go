@@ -43,7 +43,7 @@ func (s *Service) logAndHandleError(err error, msg string) error {
 }
 
 func (s *Service) Sync(ctx context.Context, req *connect.Request[pbv1.SyncRequest]) (*connect.Response[pbv1.SyncResponse], error) {
-	resp, err := s.agent.Sync(req.Msg)
+	resp, err := s.agent.Sync(ctx, req.Msg)
 	if err != nil {
 		return nil, s.logAndHandleError(err, "error syncing")
 	}

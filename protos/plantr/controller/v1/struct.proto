@@ -8,7 +8,8 @@ enum VersionType {
   VERSION_TYPE_LATEST = 2;
 }
 
-message ConfigFile { string content = 1;
+message ConfigFile {
+  string content = 1;
   string destination = 2;
 }
 
@@ -41,10 +42,15 @@ message GitRepo {
 }
 
 message Seed {
+  message Metadata {
+    string hash = 1;
+  }
+
+  Metadata metadata = 1;
   oneof element {
-    ConfigFile config_file = 1;
-    GithubRelease github_release = 2;
-    SystemPackage system_package = 3;
-    GitRepo git_repo = 4;
+    ConfigFile config_file = 2;
+    GithubRelease github_release = 3;
+    SystemPackage system_package = 4;
+    GitRepo git_repo = 5;
   }
 }

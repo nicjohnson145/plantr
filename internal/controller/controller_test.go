@@ -8,6 +8,8 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
@@ -15,6 +17,7 @@ import (
 	"github.com/nicjohnson145/plantr/internal/token"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *parsingv2.Config) *Controller {
@@ -39,6 +42,33 @@ func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *pa
 	ctrl.config = repoConfig
 
 	return ctrl
+}
+
+func seedsEqual(t *testing.T, want []*parsingv2.Seed, got []*parsingv2.Seed) {
+	t.Helper()
+
+	opts := []cmp.Option{
+		cmpopts.IgnoreFields(parsingv2.Seed{}, "Hash"),
+	}
+
+	if diff := cmp.Diff(want, got, opts...); diff != "" {
+		t.Logf("Mismatch (-want +got):\n%s", diff)
+		t.FailNow()
+	}
+}
+
+func pbEqual(t *testing.T, want any, got any) {
+	t.Helper()
+
+	opts := []cmp.Option{
+		protocmp.Transform(),
+		protocmp.IgnoreFields(&pbv1.Seed_Metadata{}, "hash"),
+	}
+
+	if diff := cmp.Diff(want, got, opts...); diff != "" {
+		t.Logf("Mismatch (-want +got):\n%s", diff)
+		t.FailNow()
+	}
 }
 
 func TestController_Login(t *testing.T) {
@@ -112,15 +142,11 @@ func TestController_CollectSeeds(t *testing.T) {
 		got, _, err := ctrl.collectSeeds("01JD340PST4R6PY8EDZ5JW127T")
 		require.NoError(t, err)
 
-		require.ElementsMatch(
+		sortSeeds(got)
+
+		seedsEqual(
 			t,
 			[]*parsingv2.Seed{
-				{
-					Element: &parsingv2.ConfigFile{
-						TemplateContent: "hello from template-one\n",
-						Destination:     "~/template-one",
-					},
-				},
 				{
 					Element: &parsingv2.ConfigFile{
 						TemplateContent: "hello from template-two\n",
@@ -131,6 +157,12 @@ func TestController_CollectSeeds(t *testing.T) {
 					Element: &parsingv2.ConfigFile{
 						TemplateContent: "hello from template-three\n",
 						Destination:     "~/template-three",
+					},
+				},
+				{
+					Element: &parsingv2.ConfigFile{
+						TemplateContent: "hello from template-one\n",
+						Destination:     "~/template-one",
 					},
 				},
 			},
@@ -180,17 +212,22 @@ func TestController_GetSyncData(t *testing.T) {
 
 		got, err := ctrl.GetSyncData(ctx, connect.NewRequest(&pbv1.GetSyncDataRequest{}))
 		require.NoError(t, err)
-		require.Equal(
+		pbEqual(
 			t,
-			connect.NewResponse(&pbv1.GetSyncDataResponse{
+			&pbv1.GetSyncDataResponse{
 				Seeds: []*pbv1.Seed{
-					{Element: &pbv1.Seed_ConfigFile{ConfigFile: &pbv1.ConfigFile{
-						Content:     "Hello from static-foo-value",
-						Destination: "/home/fake-user/foo/bar",
-					}}},
+					{
+						Metadata: &pbv1.Seed_Metadata{},
+						Element: &pbv1.Seed_ConfigFile{
+							ConfigFile: &pbv1.ConfigFile{
+								Content: "Hello from static-foo-value",
+								Destination: "/home/fake-user/foo/bar",
+							},
+						},
+					},
 				},
-			}),
-			got,
+			},
+			got.Msg,
 		)
 	})
 }

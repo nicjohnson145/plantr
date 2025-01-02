@@ -21,8 +21,17 @@ var (
 	)
 )
 
-func (a *Agent) executeSeed_githubRelease(seed *controllerv1.GithubRelease) error {
-	// TOOD: inventory tracking
+func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv1.GithubRelease, metadata *controllerv1.Seed_Metadata) error {
+	row, err := a.inventory.GetRow(ctx, metadata.Hash)
+	if err != nil {
+		return fmt.Errorf("error checking inventory: %w", err)
+	}
+
+	if row != nil {
+		a.log.Debug().Msg("release present in inventory, skipping")
+		return nil
+	}
+
 	if err := os.MkdirAll(seed.DestinationDirectory, 0775); err != nil {
 		return fmt.Errorf("error creating binary directory: %w", err)
 	}
@@ -119,6 +128,14 @@ func (a *Agent) executeSeed_githubRelease(seed *controllerv1.GithubRelease) erro
 	outPath := filepath.Join(seed.DestinationDirectory, destName)
 	if err := os.WriteFile(outPath, binaryContent, 0755); err != nil { //nolint: gosec // it has to be executable, its an executable binary
 		return fmt.Errorf("error writing final output path: %w", err)
+	}
+
+	err = a.inventory.WriteRow(ctx, InventoryRow{
+		Hash: metadata.Hash,
+		Path: hlp.Ptr(outPath),
+	})
+	if err != nil {
+		return fmt.Errorf("error writing release to inventory: %w", err)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -9,11 +10,12 @@ import (
 )
 
 type InventoryClient interface {
-
+	GetRow(ctx context.Context, hash string) (*InventoryRow, error)
+	WriteRow(ctx context.Context, row InventoryRow) error
 }
 
 func NewInventoryClientFromEnv(logger zerolog.Logger) (InventoryClient, func(), error) {
-	cleanup := func () {}
+	cleanup := func() {}
 
 	kind, err := ParseStorageKind(viper.GetString(StorageType))
 	if err != nil {
@@ -23,11 +25,11 @@ func NewInventoryClientFromEnv(logger zerolog.Logger) (InventoryClient, func(), 
 	var driver string
 	var dsn string
 	switch kind {
-		case StorageKindSqlite:
-			driver = "sqlite"
-			dsn = viper.GetString(SqliteDBPath)
-		default:
-			return nil, cleanup, fmt.Errorf("unhandled type of %v", kind)
+	case StorageKindSqlite:
+		driver = "sqlite"
+		dsn = viper.GetString(SqliteDBPath)
+	default:
+		return nil, cleanup, fmt.Errorf("unhandled type of %v", kind)
 	}
 
 	db, err := sql.Open(driver, dsn)

@@ -30,6 +30,7 @@ type AgentConfig struct {
 	ControllerAddress string
 	NowFunc           func() time.Time
 	HTTPClient        *http.Client
+	Inventory         InventoryClient
 }
 
 func NewAgent(conf AgentConfig) *Agent {
@@ -41,6 +42,7 @@ func NewAgent(conf AgentConfig) *Agent {
 		mu:                &sync.Mutex{},
 		nowFunc:           conf.NowFunc,
 		httpClient:        conf.HTTPClient,
+		inventory:         conf.Inventory,
 	}
 
 	if a.nowFunc == nil {
@@ -63,6 +65,7 @@ type Agent struct {
 	tokenExpiration time.Time
 	nowFunc         func() time.Time
 	httpClient      *http.Client
+	inventory       InventoryClient
 }
 
 func (a *Agent) logAndHandleError(err error, msg string) error {
@@ -79,7 +82,7 @@ func (a *Agent) logAndHandleError(err error, msg string) error {
 	}
 }
 
-func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
+func (a *Agent) Sync(ctx context.Context, req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 	if !a.mu.TryLock() {
 		return nil, ErrSyncInProgressError
 	}
@@ -104,7 +107,7 @@ func (a *Agent) Sync(req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
 		return nil, a.logAndHandleError(err, "error getting sync data")
 	}
 
-	if err := a.executeSeeds(resp.Msg.Seeds); err != nil {
+	if err := a.executeSeeds(ctx, resp.Msg.Seeds); err != nil {
 		return nil, a.logAndHandleError(err, "error executing seeds")
 	}
 
@@ -147,7 +150,7 @@ func (a *Agent) getAccessToken(client controllerv1connect.ControllerServiceClien
 	return a.token, nil
 }
 
-func (a *Agent) executeSeeds(seeds []*controllerv1.Seed) error {
+func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) error {
 	var errs []error
 
 	for _, seed := range seeds {
@@ -157,7 +160,7 @@ func (a *Agent) executeSeeds(seeds []*controllerv1.Seed) error {
 				errs = append(errs, fmt.Errorf("error executing config file: %w", err))
 			}
 		case *controllerv1.Seed_GithubRelease:
-			if err := a.executeSeed_githubRelease(concrete.GithubRelease); err != nil {
+			if err := a.executeSeed_githubRelease(ctx, concrete.GithubRelease, seed.Metadata); err != nil {
 				errs = append(errs, fmt.Errorf("error executing github release: %w", err))
 			}
 		case *controllerv1.Seed_SystemPackage:

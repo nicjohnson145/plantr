@@ -13,6 +13,7 @@ require (
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.18.1
+	github.com/google/go-cmp v0.6.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mholt/archives v0.0.0-20241207175349-5e373c52f8aa

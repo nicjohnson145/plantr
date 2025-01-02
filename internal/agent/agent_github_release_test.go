@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -34,12 +35,17 @@ func TestExecuteGithubRelease(t *testing.T) {
 			HTTPClient: &http.Client{
 				Transport: mockTransport,
 			},
+			Inventory: NewNoopInventory(NoopInventoryConfig{}),
 		})
 
-		require.NoError(t, a.executeSeed_githubRelease(&controllerv1.GithubRelease{
-			DownloadUrl:          downloadURL,
-			DestinationDirectory: destDir,
-		}))
+		require.NoError(t, a.executeSeed_githubRelease(
+			context.Background(),
+			&controllerv1.GithubRelease{
+				DownloadUrl: downloadURL,
+				DestinationDirectory: destDir,
+			},
+			&controllerv1.Seed_Metadata{},
+		))
 
 		// <tmp>/bin/bat should now exist
 		_, err = os.Stat(filepath.Join(destDir, "bat"))

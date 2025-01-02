@@ -3,6 +3,7 @@ package controller
 import (
 	"crypto/md5" //nolint:gosec // its for fingerprinting, it doesnt have to be cryptographically secure
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
@@ -54,3 +55,8 @@ func seedHash(x *parsingv2.Seed) string {
 	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, "")))) //nolint: gosec // its a hash, it doesnt have to be cryptographically secure
 }
 
+func sortSeeds(seeds []*parsingv2.Seed) {
+	sort.Slice(seeds, func(i, j int) bool {
+		return strings.Compare(seedHash(seeds[i]), seedHash(seeds[j])) < 0
+	})
+}

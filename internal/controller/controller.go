@@ -363,6 +363,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, *parsingv2.
 		}
 
 		for _, seed := range seeds {
+			seed.Hash = c.hashFunc(seed)
 			seedSet.Add(seed)
 		}
 	}
@@ -426,6 +427,11 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
+		}
+
+		// Set general metadata about the seed
+		outSeeds[i].Metadata = &pbv1.Seed_Metadata{
+			Hash: seed.Hash,
 		}
 	}
 
