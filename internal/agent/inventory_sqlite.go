@@ -12,13 +12,13 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type SqlLiteConfig struct {
+type SqlLiteInventoryConfig struct {
 	Logger zerolog.Logger
 	DB     *sql.DB
 }
 
-func NewSqlLite(conf SqlLiteConfig) (*SqlLite, error) {
-	cli :=  &SqlLite{
+func NewSqlLiteInventory(conf SqlLiteInventoryConfig) (*SqlLiteInventory, error) {
+	cli :=  &SqlLiteInventory{
 		log: conf.Logger,
 		db:  sqlx.NewDb(conf.DB, "sqlite"),
 	}
@@ -30,12 +30,12 @@ func NewSqlLite(conf SqlLiteConfig) (*SqlLite, error) {
 	return cli, nil
 }
 
-type SqlLite struct {
+type SqlLiteInventory struct {
 	log zerolog.Logger
 	db  *sqlx.DB
 }
 
-func (s *SqlLite) init() error {
+func (s *SqlLiteInventory) init() error {
 	if _, err := s.db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
 		return fmt.Errorf("error enabling foreign key pragma: %w", err)
 	}
@@ -43,7 +43,7 @@ func (s *SqlLite) init() error {
 	return nil
 }
 
-func (s *SqlLite) GetRow(ctx context.Context, hash string) (*InventoryRow, error) {
+func (s *SqlLiteInventory) GetRow(ctx context.Context, hash string) (*InventoryRow, error) {
 	stmt := `
 		SELECT
 			*
@@ -67,7 +67,7 @@ func (s *SqlLite) GetRow(ctx context.Context, hash string) (*InventoryRow, error
 	return hlp.Ptr(rows[0].ToInventoryRow()), nil
 }
 
-func (s *SqlLite) WriteRow(ctx context.Context, row InventoryRow) error {
+func (s *SqlLiteInventory) WriteRow(ctx context.Context, row InventoryRow) error {
 	return hsqlx.WithTransaction(s.db, func(txn *sqlx.Tx) error {
 		// Start by purging old rows, since if we're writing then we've overwritten them
 		if row.Package != nil {
@@ -106,15 +106,15 @@ func (s *SqlLite) WriteRow(ctx context.Context, row InventoryRow) error {
 	})
 }
 
-func (s *SqlLite) purgeByPath(ctx context.Context, txn *sqlx.Tx, path string) error {
+func (s *SqlLiteInventory) purgeByPath(ctx context.Context, txn *sqlx.Tx, path string) error {
 	return s.purgeByColumn(ctx, txn, "path", path)
 }
 
-func (s *SqlLite) purgeByPackage(ctx context.Context, txn *sqlx.Tx, pkg string) error {
+func (s *SqlLiteInventory) purgeByPackage(ctx context.Context, txn *sqlx.Tx, pkg string) error {
 	return s.purgeByColumn(ctx, txn, "package", pkg)
 }
 
-func (s *SqlLite) purgeByColumn(ctx context.Context, txn *sqlx.Tx, column string, value string) error {
+func (s *SqlLiteInventory) purgeByColumn(ctx context.Context, txn *sqlx.Tx, column string, value string) error {
 	stmt := fmt.Sprintf(`
 		DELETE FROM
 			agent_inventory

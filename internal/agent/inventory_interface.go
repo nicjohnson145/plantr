@@ -48,7 +48,7 @@ func NewInventoryClientFromEnv(logger zerolog.Logger) (InventoryClient, func(), 
 
 	switch kind {
 	case StorageKindSqlite:
-		sqlite, err := NewSqlLite(SqlLiteConfig{
+		sqlite, err := NewSqlLiteInventory(SqlLiteInventoryConfig{
 			Logger: logger,
 			DB:     db,
 		})
