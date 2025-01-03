@@ -15,6 +15,7 @@ import (
 /*
 ENUM(
 sqlite
+none
 )
 */
 type StorageKind string
@@ -45,7 +46,6 @@ var (
 	DefaultLogResponses = false
 
 	DefaultStorageType  = StorageKindSqlite.String()
-	DefaultSqliteDBPath = "<HOME>/.cache/plantr/storage.db"
 
 	DefaultPollInterval = "0s"
 )

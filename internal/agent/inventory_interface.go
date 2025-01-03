@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
@@ -28,6 +30,12 @@ func NewInventoryClientFromEnv(logger zerolog.Logger) (InventoryClient, func(), 
 	case StorageKindSqlite:
 		driver = "sqlite"
 		dsn = viper.GetString(SqliteDBPath)
+		// ensure that any containing directories are created
+		if err := os.MkdirAll(filepath.Dir(dsn), 0775); err != nil {
+			return nil, cleanup, fmt.Errorf("error ensuring containing directories: %w", err)
+		}
+	case StorageKindNone:
+		return NewNoopInventory(NoopInventoryConfig{Logger: logger}), func() {}, nil
 	default:
 		return nil, cleanup, fmt.Errorf("unhandled type of %v", kind)
 	}

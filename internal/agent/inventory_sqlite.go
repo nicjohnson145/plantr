@@ -98,7 +98,7 @@ func (s *SqlLiteInventory) WriteRow(ctx context.Context, row InventoryRow) error
 				)
 		`
 
-		if _, err := s.db.NamedExecContext(ctx, stmt, row.ToDBRow()); err != nil {
+		if _, err := txn.NamedExecContext(ctx, stmt, row.ToDBRow()); err != nil {
 			return fmt.Errorf("error inserting: %w", err)
 		}
 

@@ -3,7 +3,7 @@ BEGIN;
 CREATE TABLE agent_inventory ( 
     hash     TEXT NOT NULL,
     path     TEXT,
-    package  TEXT
+    package  TEXT,
     PRIMARY KEY (hash)
 );
 

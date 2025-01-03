@@ -1,18 +1,27 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/nicjohnson145/hlp"
 	controllerv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/util"
 )
 
-func (a *Agent) executeSeed_gitRepo(pbRepo *controllerv1.GitRepo) error {
-	// TODO: inventory
+func (a *Agent) executeSeed_gitRepo(ctx context.Context, pbRepo *controllerv1.GitRepo, metadata *controllerv1.Seed_Metadata) error {
+	row, err := a.inventory.GetRow(ctx, metadata.Hash)
+	if err != nil {
+		return fmt.Errorf("error reading inventory: %w", err)
+	}
+	if row != nil {
+		a.log.Debug().Msg("git repo found in inventory, skipping")
+		return nil
+	}
 
 	// Does the location already exist?
 	exists, err := util.PathExists(pbRepo.Location)
@@ -57,6 +66,14 @@ func (a *Agent) executeSeed_gitRepo(pbRepo *controllerv1.GitRepo) error {
 	// Otherwise, checkout that new desired hash
 	if err := a.checkoutCommit(repo, wantHash); err != nil {
 		return fmt.Errorf("error checking out commit: %w", err)
+	}
+
+	err = a.inventory.WriteRow(ctx, InventoryRow{
+		Hash: metadata.Hash,
+		Path: hlp.Ptr(pbRepo.Location),
+	})
+	if err != nil {
+		return fmt.Errorf("error writing inventory: %w", err)
 	}
 
 	return nil

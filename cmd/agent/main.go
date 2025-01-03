@@ -77,11 +77,19 @@ func run() error {
 		return errors.New(msg)
 	}
 
+	inventory, inventoryCleanup, err := agent.NewInventoryClientFromEnv(logging.Component(logger, "inventory"))
+	defer inventoryCleanup()
+	if err != nil {
+		logger.Err(err).Msg("error creating inventory client")
+		return err
+	}
+
 	worker := agent.NewAgent(agent.AgentConfig{
 		Logger:            logging.Component(logger, "agent-worker"),
 		NodeID:            nodeID,
 		ControllerAddress: controllerAddress,
 		PrivateKey:        string(privateKeyBytes),
+		Inventory:         inventory,
 	})
 
 	srv := agent.NewService(agent.ServiceConfig{

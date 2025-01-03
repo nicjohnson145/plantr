@@ -14,12 +14,15 @@ import (
 const (
 	// StorageKindSqlite is a StorageKind of type sqlite.
 	StorageKindSqlite StorageKind = "sqlite"
+	// StorageKindNone is a StorageKind of type none.
+	StorageKindNone StorageKind = "none"
 )
 
 var ErrInvalidStorageKind = fmt.Errorf("not a valid StorageKind, try [%s]", strings.Join(_StorageKindNames, ", "))
 
 var _StorageKindNames = []string{
 	string(StorageKindSqlite),
+	string(StorageKindNone),
 }
 
 // StorageKindNames returns a list of possible string values of StorageKind.
@@ -43,6 +46,7 @@ func (x StorageKind) IsValid() bool {
 
 var _StorageKindValue = map[string]StorageKind{
 	"sqlite": StorageKindSqlite,
+	"none":   StorageKindNone,
 }
 
 // ParseStorageKind attempts to convert a string to a StorageKind.
