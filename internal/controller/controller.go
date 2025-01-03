@@ -3,8 +3,13 @@ package controller
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"text/template"
@@ -46,6 +51,8 @@ type ControllerConfig struct {
 	HttpClient         *http.Client
 	GithubReleaseToken string
 
+	GithubWebhookSecret []byte
+
 	NowFunc  func() time.Time             // for unit tests
 	HashFunc func(*parsingv2.Seed) string // for unit tests
 }
@@ -69,6 +76,7 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		configMu:           &sync.RWMutex{},
 		vaultMu:            &sync.RWMutex{},
 		hashFunc:           conf.HashFunc,
+		githubWebhookSecret: conf.GithubWebhookSecret,
 	}
 
 	if ctrl.nowFunc == nil {
@@ -93,6 +101,8 @@ type Controller struct {
 	vault              VaultClient
 	httpClient         *http.Client
 	githubReleaseToken string
+
+	githubWebhookSecret []byte
 
 	configMu *sync.RWMutex
 	config   *parsingv2.Config
@@ -218,6 +228,66 @@ func (c *Controller) cloneVaultData() (map[string]any, error) {
 	}
 
 	return out, nil
+}
+
+type githubPushBody struct {
+	Ref   string `json:"ref"`
+	After string `json:"after"`
+}
+
+func (c *Controller) HandleGithubWebhook(req *http.Request) error {
+	body, err := c.validateGithubRequest(req)
+	if err != nil {
+		return c.logAndHandleError(err, "error validating webhook payload")
+	}
+
+	var pushBody githubPushBody
+	if err := json.Unmarshal(body, &pushBody); err != nil {
+		return c.logAndHandleError(err, "error unmarshalling body")
+	}
+
+	// TODO: configurable
+	if pushBody.Ref != "refs/heads/main" {
+		return nil
+	}
+
+	c.log.Info().Msg("recieved github webhook event for main, refreshing repo")
+	repoFS, err := c.git.CloneAtCommit(c.repoUrl, pushBody.After)
+	if err != nil {
+		return c.logAndHandleError(err, "error cloning repo")
+	}
+	config, err := parsingv2.ParseFS(repoFS)
+	if err != nil {
+		return c.logAndHandleError(err, "error parsing config")
+	}
+
+	c.configMu.Lock()
+	c.config = config
+	c.configMu.Unlock()
+
+	return nil
+}
+
+func (c *Controller) validateGithubRequest(req *http.Request) ([]byte, error) {
+	digest := req.Header.Get("X-Hub-Signature-256")
+	if digest == "" {
+		return nil, fmt.Errorf("missing X-Hub-Signature-256 header")
+	}
+
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading request body: %w", err)
+	}
+
+	mac := hmac.New(sha256.New, c.githubWebhookSecret)
+	_, err = mac.Write(body)
+	computed := hex.EncodeToString(mac.Sum(nil))
+
+	if !hmac.Equal([]byte(strings.TrimPrefix(digest, "sha256=")), []byte(computed)) {
+		return nil, fmt.Errorf("computed digest does not match header")
+	}
+
+	return body, nil
 }
 
 func (c *Controller) Login(ctx context.Context, req *connect.Request[pbv1.LoginRequest]) (*connect.Response[pbv1.LoginResponse], error) {

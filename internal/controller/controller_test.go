@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"bytes"
 	"context"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -229,5 +231,28 @@ func TestController_GetSyncData(t *testing.T) {
 			},
 			got.Msg,
 		)
+	})
+}
+
+func TestValidateGithubRequest(t *testing.T) {
+	t.Run("docs example", func(t *testing.T) {
+		ctrl := newControllerWithConfig(
+			t,
+			ControllerConfig{
+				GithubWebhookSecret: []byte("It's a Secret to Everybody"),
+			},
+			nil,
+		)
+
+		req, err := http.NewRequest(
+			http.MethodPost,
+			"http://fake.example.com",
+			bytes.NewBuffer([]byte("Hello, World!")),
+		)
+		require.NoError(t, err)
+		req.Header.Add("X-Hub-Signature-256", "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e17")
+
+		_, err = ctrl.validateGithubRequest(req)
+		require.NoError(t, err)
 	})
 }

@@ -116,6 +116,14 @@ func run() error {
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 
+	mux.Handle("/webhooks/github", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := ctrl.HandleGithubWebhook(r); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	}))
+
 	port := viper.GetString(controller.Port)
 	lis, err := net.Listen("tcp4", ":"+port)
 	if err != nil {
