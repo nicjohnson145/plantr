@@ -236,7 +236,7 @@ func (a *Agent) executeSeed_systemPackage_apt(ctx context.Context, pkg *controll
 	}
 
 	err = a.inventory.WriteRow(ctx, InventoryRow{
-		Hash: metadata.Hash,
+		Hash:    metadata.Hash,
 		Package: hlp.Ptr(pkg.Name),
 	})
 	if err != nil {

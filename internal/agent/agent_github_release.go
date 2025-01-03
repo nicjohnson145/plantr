@@ -99,7 +99,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 		}
 
 		err = extractor.Extract(ctx, stream, func(ctx context.Context, info archives.FileInfo) error {
-			infoPath := strings.TrimPrefix(info.NameInArchive, targetName + "/")
+			infoPath := strings.TrimPrefix(info.NameInArchive, targetName+"/")
 			// i.e its the top level directory
 			if infoPath == "" {
 				return nil

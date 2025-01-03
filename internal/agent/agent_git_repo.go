@@ -112,16 +112,16 @@ func (a *Agent) fetchLatest(repo *git.Repository) error {
 
 func (a *Agent) translateToHash(pbRepo *controllerv1.GitRepo, repo *git.Repository) (string, error) {
 	switch concrete := pbRepo.Ref.(type) {
-		case *controllerv1.GitRepo_Commit:
-			return concrete.Commit, nil
-		case *controllerv1.GitRepo_Tag:
-			h, err := repo.ResolveRevision(plumbing.Revision(concrete.Tag))
-			if err != nil {
-				return "", fmt.Errorf("error resolving tag: %w", err)
-			}
-			return h.String(), nil
-		default:
-			return "", fmt.Errorf("unhandled reference type %T", concrete)
+	case *controllerv1.GitRepo_Commit:
+		return concrete.Commit, nil
+	case *controllerv1.GitRepo_Tag:
+		h, err := repo.ResolveRevision(plumbing.Revision(concrete.Tag))
+		if err != nil {
+			return "", fmt.Errorf("error resolving tag: %w", err)
+		}
+		return h.String(), nil
+	default:
+		return "", fmt.Errorf("unhandled reference type %T", concrete)
 	}
 }
 

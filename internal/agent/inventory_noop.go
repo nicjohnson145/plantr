@@ -20,7 +20,6 @@ type NoopInventory struct {
 	log zerolog.Logger
 }
 
-
 func (n *NoopInventory) GetRow(ctx context.Context, hash string) (*InventoryRow, error) {
 	return nil, nil
 }
@@ -28,4 +27,3 @@ func (n *NoopInventory) GetRow(ctx context.Context, hash string) (*InventoryRow,
 func (n *NoopInventory) WriteRow(ctx context.Context, row InventoryRow) error {
 	return nil
 }
-

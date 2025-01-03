@@ -306,34 +306,34 @@ func TestGitRepo(t *testing.T) {
 			err:     "",
 		},
 		{
-			name:    "valid commit",
+			name: "valid commit",
 			modFunc: func(x *configv1.GitRepo) {
 				x.Ref = &configv1.GitRepo_Commit{
 					Commit: "some-commit",
 				}
 			},
-			err:     "",
+			err: "",
 		},
 		{
-			name:    "no url",
+			name: "no url",
 			modFunc: func(x *configv1.GitRepo) {
 				x.Url = ""
 			},
-			err:     "url is a required field",
+			err: "url is a required field",
 		},
 		{
-			name:    "no location",
+			name: "no location",
 			modFunc: func(x *configv1.GitRepo) {
 				x.Location = ""
 			},
-			err:     "location is a required field",
+			err: "location is a required field",
 		},
 		{
-			name:    "no ref",
+			name: "no ref",
 			modFunc: func(x *configv1.GitRepo) {
 				x.Ref = nil
 			},
-			err:     "ref: exactly one field is required in oneof",
+			err: "ref: exactly one field is required in oneof",
 		},
 	}
 	for _, tc := range testData {

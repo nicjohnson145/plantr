@@ -482,7 +482,7 @@ func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node
 
 func (c *Controller) renderSeed_gitRepo(repo *parsingv2.GitRepo, node *parsingv2.Node) (*pbv1.GitRepo, error) {
 	outRepo := &pbv1.GitRepo{
-		Url: repo.URL,
+		Url:      repo.URL,
 		Location: strings.ReplaceAll(repo.Location, "~", node.UserHome),
 	}
 

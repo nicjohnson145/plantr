@@ -117,7 +117,7 @@ func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *DBGithubReleas
 			os = :os AND
 			arch = :arch
 	`
-	
+
 	rows, err := hsqlx.RequireExactSelectNamedCtx[DBGithubRelease](ctx, 1, s.db, stmt, release)
 	if err != nil {
 		if errors.Is(err, hsqlx.ErrNotFoundError) {
@@ -128,7 +128,7 @@ func (s *SqlLite) ReadGithubRelease(ctx context.Context, release *DBGithubReleas
 	return rows[0].DownloadURL, nil
 }
 
-func (s *SqlLite) WriteGithubReleaseAsset(ctx context.Context, release *DBGithubRelease) (error) {
+func (s *SqlLite) WriteGithubReleaseAsset(ctx context.Context, release *DBGithubRelease) error {
 	stmt := `
 		INSERT OR REPLACE INTO
 			github_release_asset

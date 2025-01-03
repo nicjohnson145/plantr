@@ -45,7 +45,7 @@ var (
 	DefaultLogRequests  = false
 	DefaultLogResponses = false
 
-	DefaultStorageType  = StorageKindSqlite.String()
+	DefaultStorageType = StorageKindSqlite.String()
 
 	DefaultPollInterval = "0s"
 )

@@ -18,7 +18,7 @@ type SqlLiteInventoryConfig struct {
 }
 
 func NewSqlLiteInventory(conf SqlLiteInventoryConfig) (*SqlLiteInventory, error) {
-	cli :=  &SqlLiteInventory{
+	cli := &SqlLiteInventory{
 		log: conf.Logger,
 		db:  sqlx.NewDb(conf.DB, "sqlite"),
 	}

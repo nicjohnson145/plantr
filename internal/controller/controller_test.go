@@ -220,7 +220,7 @@ func TestController_GetSyncData(t *testing.T) {
 						Metadata: &pbv1.Seed_Metadata{},
 						Element: &pbv1.Seed_ConfigFile{
 							ConfigFile: &pbv1.ConfigFile{
-								Content: "Hello from static-foo-value",
+								Content:     "Hello from static-foo-value",
 								Destination: "/home/fake-user/foo/bar",
 							},
 						},
