@@ -53,6 +53,46 @@ func TestExecuteGithubRelease(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("archive - name override", func(t *testing.T) {
+		const (
+			downloadURL = "http://fake-place.example.com/downloads/bat-v0.24.0-x86_64-unknown-linux-musl.tar.gz"
+		)
+
+		tarBytes, err := os.ReadFile("./testdata/github-release/bat-v0.24.0-x86_64-unknown-linux-musl.tar.gz")
+		require.NoError(t, err)
+
+		tmpDir := t.TempDir()
+		destDir := filepath.Join(tmpDir, "bin")
+
+		mockTransport := httpmock.NewMockTransport()
+		mockTransport.RegisterResponder(
+			http.MethodGet,
+			downloadURL,
+			httpmock.NewBytesResponder(http.StatusOK, tarBytes),
+		)
+
+		a := NewAgent(AgentConfig{
+			HTTPClient: &http.Client{
+				Transport: mockTransport,
+			},
+			Inventory: NewNoopInventory(NoopInventoryConfig{}),
+		})
+
+		require.NoError(t, a.executeSeed_githubRelease(
+			context.Background(),
+			&controllerv1.GithubRelease{
+				DownloadUrl:          downloadURL,
+				DestinationDirectory: destDir,
+				NameOverride:         hlp.Ptr("bat2"),
+			},
+			&controllerv1.Seed_Metadata{},
+		))
+
+		// <tmp>/bin/bat should now exist
+		_, err = os.Stat(filepath.Join(destDir, "bat2"))
+		require.NoError(t, err)
+	})
+
 	t.Run("archive release", func(t *testing.T) {
 		const (
 			downloadURL = "http://fake-place.example.com/downloads/nvim-linux64.tar.gz"
