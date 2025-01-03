@@ -38,7 +38,8 @@ message GithubRelease {
     message: "tag is a required field",
     expression: "size(this) > 0"
   }];
-  optional string binary_name_override = 4;
+  optional string name_override = 4;
+  bool archive_release = 5;
 }
 
 message SystemPackage {

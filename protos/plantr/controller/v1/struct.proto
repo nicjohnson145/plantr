@@ -20,7 +20,8 @@ message GithubRelease {
   string download_url = 1;
   Authentication authentication = 2;
   string destination_directory = 3;
-  optional string binary_name_override = 4;
+  optional string name_override = 4;
+  bool archive_release = 5;
 }
 
 message SystemPackage {

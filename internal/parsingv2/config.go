@@ -173,10 +173,11 @@ func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
 
 	return &Seed{
 		Element: &GithubRelease{
-			Repo:               release.Repo,
-			AssetPatterns:      assetPatterns,
-			Tag:                release.Tag,
-			BinaryNameOverride: release.BinaryNameOverride,
+			Repo:           release.Repo,
+			AssetPatterns:  assetPatterns,
+			Tag:            release.Tag,
+			NameOverride:   release.NameOverride,
+			ArchiveRelease: release.ArchiveRelease,
 		},
 	}, nil
 }
@@ -205,16 +206,16 @@ func parseSeed_gitRepo(repo *configv1.GitRepo) (*Seed, error) {
 	}
 
 	outRepo := &GitRepo{
-		URL: repo.Url,
+		URL:      repo.Url,
 		Location: repo.Location,
 	}
 	switch concrete := repo.Ref.(type) {
-		case *configv1.GitRepo_Tag:
-			outRepo.Tag = hlp.Ptr(concrete.Tag)
-		case *configv1.GitRepo_Commit:
-			outRepo.Commit = hlp.Ptr(concrete.Commit)
-		default:
-			return nil, fmt.Errorf("unhandled ref type of %T", concrete)
+	case *configv1.GitRepo_Tag:
+		outRepo.Tag = hlp.Ptr(concrete.Tag)
+	case *configv1.GitRepo_Commit:
+		outRepo.Commit = hlp.Ptr(concrete.Commit)
+	default:
+		return nil, fmt.Errorf("unhandled ref type of %T", concrete)
 	}
 
 	return &Seed{

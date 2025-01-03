@@ -16,7 +16,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/mholt/archives v0.0.0-20241207175349-5e373c52f8aa
+	github.com/mholt/archives v0.1.0
 	github.com/nicjohnson145/hlp v0.7.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/psanford/memfs v0.0.0-20241019191636-4ef911798f9b

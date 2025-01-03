@@ -80,7 +80,8 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 	outRelease := &pbv1.GithubRelease{
 		DownloadUrl:          assertUrl,
 		DestinationDirectory: node.BinDir,
-		BinaryNameOverride:   release.BinaryNameOverride,
+		NameOverride:         release.NameOverride,
+		ArchiveRelease:       release.ArchiveRelease,
 	}
 
 	if c.githubReleaseToken != "" {
