@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/carlmjohnson/requests"
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/agent/v1"
 	controllerv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
@@ -172,6 +174,10 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 			if err := a.executeSeed_gitRepo(ctx, concrete.GitRepo, seed.Metadata); err != nil {
 				errs = append(errs, fmt.Errorf("error executing git repo: %w", err))
 			}
+		case *controllerv1.Seed_Golang:
+			if err := a.executeSeed_golang(ctx, concrete.Golang, seed.Metadata); err != nil {
+				errs = append(errs, fmt.Errorf("error executing golang: %w", err))
+			}
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
 		}
@@ -241,6 +247,65 @@ func (a *Agent) executeSeed_systemPackage_apt(ctx context.Context, pkg *controll
 	})
 	if err != nil {
 		return fmt.Errorf("error writing to inventory: %w", err)
+	}
+
+	return nil
+}
+
+func (a *Agent) executeSeed_golang(ctx context.Context, golang *controllerv1.Golang, metadata *controllerv1.Seed_Metadata) error {
+	a.log.Info().Msgf("installing golang@%v", golang.Version)
+
+	if runtime.GOOS != "linux" {
+		return fmt.Errorf("golang install only available for linux OS")
+	}
+
+	row, err := a.inventory.GetRow(ctx, metadata.Hash)
+	if err != nil {
+		return fmt.Errorf("error checking inventory: %w", err)
+	}
+	if row != nil {
+		a.log.Debug().Msg("golang found in inventory, skipping")
+		return nil
+	}
+
+	a.log.Trace().Msg("removing existing installation")
+	// make sure to clean out the old version first per the golang docs. Run this command through the shell so we can
+	// elivate privileges
+	_, _, err = ExecuteOSCommand("/bin/sh", "-c", "sudo rm -rf /usr/local/go")
+	if err != nil {
+		return fmt.Errorf("error removing old golang installation: %w", err)
+	}
+
+	a.log.Trace().Msg("downloading release tarball")
+	dir, err := os.MkdirTemp("", "plantr-golang-")
+	if err != nil {
+		return fmt.Errorf("unable to make temp directory")
+	}
+	defer os.RemoveAll(dir)
+
+	tarball := fmt.Sprintf("go%v.linux-%v.tar.gz", golang.Version, runtime.GOARCH)
+	filepath := filepath.Join(dir, tarball)
+	err = requests.
+		URL(fmt.Sprintf("https://go.dev/dl/%v", tarball)).
+		ToFile(filepath).
+		Fetch(context.Background())
+	if err != nil {
+		return fmt.Errorf("error downloading tarball: %w", err)
+	}
+
+	a.log.Trace().Msg("extracting tarball")
+	// Execute this through the shell so we can elevate privileges with sudo
+	_, _, err = ExecuteOSCommand("/bin/sh", "-c", fmt.Sprintf("sudo tar -C /usr/local -xzf %v", filepath))
+	if err != nil {
+		return fmt.Errorf("error unpacking tarball: %w", err)
+	}
+
+	err = a.inventory.WriteRow(ctx, InventoryRow{
+		Hash: metadata.Hash,
+		Path: hlp.Ptr("/usr/local/go"),
+	})
+	if err != nil {
+		return fmt.Errorf("error writing inventory: %w", err)
 	}
 
 	return nil

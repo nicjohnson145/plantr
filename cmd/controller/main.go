@@ -79,14 +79,15 @@ func run() error {
 	}
 
 	ctrl, err := controller.NewController(controller.ControllerConfig{
-		Logger:             logging.Component(logger, "service"),
-		StorageClient:      storage,
-		GitClient:          gitClient,
-		RepoURL:            url,
-		JWTSigningKey:      []byte(jwtKeyStr),
-		JWTDuration:        viper.GetDuration(controller.JWTDuration),
-		VaultClient:        vaultClient,
-		GithubReleaseToken: viper.GetString(controller.GitAccessToken),
+		Logger:              logging.Component(logger, "service"),
+		StorageClient:       storage,
+		GitClient:           gitClient,
+		RepoURL:             url,
+		JWTSigningKey:       []byte(jwtKeyStr),
+		JWTDuration:         viper.GetDuration(controller.JWTDuration),
+		VaultClient:         vaultClient,
+		GithubReleaseToken:  viper.GetString(controller.GitAccessToken),
+		GithubWebhookSecret: []byte(viper.GetString(controller.GithubWebhookSecret)),
 	})
 	if err != nil {
 		logger.Err(err).Msg("error initializing controller")
@@ -115,14 +116,7 @@ func run() error {
 	))
 	mux.Handle(grpcreflect.NewHandlerV1(reflector))
 	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
-
-	mux.Handle("/webhooks/github", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := ctrl.HandleGithubWebhook(r); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
-		}
-	}))
+	mux.Handle(ctrl.NewGithubWebhookHandler())
 
 	port := viper.GetString(controller.Port)
 	lis, err := net.Listen("tcp4", ":"+port)

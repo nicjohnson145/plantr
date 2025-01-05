@@ -63,19 +63,19 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		repoUrl = repoUrl + ".git"
 	}
 	ctrl := &Controller{
-		log:                conf.Logger,
-		git:                conf.GitClient,
-		store:              conf.StorageClient,
-		repoUrl:            repoUrl,
-		jwtSigningKey:      conf.JWTSigningKey,
-		jwtDuration:        conf.JWTDuration,
-		nowFunc:            conf.NowFunc,
-		vault:              conf.VaultClient,
-		httpClient:         conf.HttpClient,
-		githubReleaseToken: conf.GithubReleaseToken,
-		configMu:           &sync.RWMutex{},
-		vaultMu:            &sync.RWMutex{},
-		hashFunc:           conf.HashFunc,
+		log:                 conf.Logger,
+		git:                 conf.GitClient,
+		store:               conf.StorageClient,
+		repoUrl:             repoUrl,
+		jwtSigningKey:       conf.JWTSigningKey,
+		jwtDuration:         conf.JWTDuration,
+		nowFunc:             conf.NowFunc,
+		vault:               conf.VaultClient,
+		httpClient:          conf.HttpClient,
+		githubReleaseToken:  conf.GithubReleaseToken,
+		configMu:            &sync.RWMutex{},
+		vaultMu:             &sync.RWMutex{},
+		hashFunc:            conf.HashFunc,
 		githubWebhookSecret: conf.GithubWebhookSecret,
 	}
 
@@ -230,12 +230,22 @@ func (c *Controller) cloneVaultData() (map[string]any, error) {
 	return out, nil
 }
 
+func (c *Controller) NewGithubWebhookHandler() (string, http.Handler) {
+	return "/webhooks/github", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := c.handleGithubWebhook(r); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+	})
+}
+
 type githubPushBody struct {
 	Ref   string `json:"ref"`
 	After string `json:"after"`
 }
 
-func (c *Controller) HandleGithubWebhook(req *http.Request) error {
+func (c *Controller) handleGithubWebhook(req *http.Request) error {
 	body, err := c.validateGithubRequest(req)
 	if err != nil {
 		return c.logAndHandleError(err, "error validating webhook payload")
@@ -269,6 +279,10 @@ func (c *Controller) HandleGithubWebhook(req *http.Request) error {
 }
 
 func (c *Controller) validateGithubRequest(req *http.Request) ([]byte, error) {
+	if c.githubWebhookSecret == nil || len(c.githubWebhookSecret) == 0 {
+		return nil, fmt.Errorf("github webhook secret not set")
+	}
+
 	digest := req.Header.Get("X-Hub-Signature-256")
 	if digest == "" {
 		return nil, fmt.Errorf("missing X-Hub-Signature-256 header")
@@ -494,6 +508,12 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 					GitRepo: out,
 				},
 			}
+		case *parsingv2.Golang:
+			outSeeds[i] = &pbv1.Seed{
+				Element: &pbv1.Seed_Golang{
+					Golang: c.renderSeed_golang(concrete),
+				},
+			}
 
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
@@ -566,4 +586,10 @@ func (c *Controller) renderSeed_gitRepo(repo *parsingv2.GitRepo, node *parsingv2
 	}
 
 	return outRepo, nil
+}
+
+func (c *Controller) renderSeed_golang(golang *parsingv2.Golang) *pbv1.Golang {
+	return &pbv1.Golang{
+		Version: golang.Version,
+	}
 }

@@ -59,3 +59,7 @@ type GitRepo struct {
 	Tag      *string
 	Commit   *string
 }
+
+type Golang struct {
+	Version string
+}

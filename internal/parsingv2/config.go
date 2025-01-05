@@ -98,6 +98,8 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 			seed, err = parseSeed_systemPackage(concrete.SystemPackage)
 		case *configv1.Seed_GitRepo:
 			seed, err = parseSeed_gitRepo(concrete.GitRepo)
+		case *configv1.Seed_Golang:
+			seed, err = parseSeed_golang(concrete.Golang)
 		default:
 			return nil, fmt.Errorf("unhandled seed type %T", concrete)
 		}
@@ -220,5 +222,17 @@ func parseSeed_gitRepo(repo *configv1.GitRepo) (*Seed, error) {
 
 	return &Seed{
 		Element: outRepo,
+	}, nil
+}
+
+func parseSeed_golang(golang *configv1.Golang) (*Seed, error) {
+	if err := protovalidate.Validate(golang); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
+	}
+
+	return &Seed{
+		Element: &Golang{
+			Version: golang.Version,
+		},
 	}, nil
 }

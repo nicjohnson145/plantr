@@ -36,9 +36,11 @@ const (
 
 	SqliteDBPath = "sqlite.db_path"
 
-	GitType        = "git.type"
-	GitAccessToken = "git.access_token"
-	GitUrl         = "git.url"
+	GitType             = "git.type"
+	GitAccessToken      = "git.access_token"
+	GitUrl              = "git.url"
+
+	GithubWebhookSecret = "github.webhook_secret"
 
 	GitStaticCheckoutPath = "git.static.checkout_path"
 

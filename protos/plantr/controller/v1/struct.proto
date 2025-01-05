@@ -42,6 +42,10 @@ message GitRepo {
   }
 }
 
+message Golang {
+  string version = 1;
+}
+
 message Seed {
   message Metadata {
     string hash = 1;
@@ -53,5 +57,6 @@ message Seed {
     GithubRelease github_release = 3;
     SystemPackage system_package = 4;
     GitRepo git_repo = 5;
+    Golang golang = 6;
   }
 }

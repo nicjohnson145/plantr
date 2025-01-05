@@ -48,6 +48,11 @@ func seedHash(x *parsingv2.Seed) string {
 				concrete.Apt.Name,
 			)
 		}
+	case *parsingv2.Golang:
+		parts = []string{
+			"Golang",
+			concrete.Version,
+		}
 	default:
 		panic(fmt.Sprintf("unhandled seed type %T", concrete))
 	}

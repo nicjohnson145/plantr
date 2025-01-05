@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -10,6 +11,8 @@ import (
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
@@ -130,6 +133,20 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 	steps := []filterStep{
 		{
 			function: func() (*regexp.Regexp, error) {
+				return regexChecksum, nil
+			},
+			shouldMatch: false,
+			msg:         "attempting to filter off checksum assets",
+		},
+		{
+			function: func() (*regexp.Regexp, error) {
+				return regexLinuxPkg, nil
+			},
+			shouldMatch: false,
+			msg:         "attempting to filter off 'package' assets",
+		},
+		{
+			function: func() (*regexp.Regexp, error) {
 				osPatt, ok := osRegexMap[node.OS]
 				if !ok {
 					return nil, fmt.Errorf("no pre-made patterns for OS %v", node.OS)
@@ -149,20 +166,6 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 			},
 			shouldMatch: true,
 			msg:         "attempting to filter assets by architecture",
-		},
-		{
-			function: func() (*regexp.Regexp, error) {
-				return regexLinuxPkg, nil
-			},
-			shouldMatch: false,
-			msg:         "attempting to filter off 'package' assets",
-		},
-		{
-			function: func() (*regexp.Regexp, error) {
-				return regexChecksum, nil
-			},
-			shouldMatch: false,
-			msg:         "attempting to filter off checksum assets",
 		},
 		{
 			function: func() (*regexp.Regexp, error) {
@@ -187,6 +190,7 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 		}
 		c.log.Trace().Msg(step.msg)
 		filteredAssets = c.filterAssets(filteredAssets, patt, step.shouldMatch)
+		MarshallDebug(filteredAssets)
 		if len(filteredAssets) == 1 {
 			return &filteredAssets[0], nil
 		}
@@ -197,6 +201,24 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 
 	c.log.Trace().Msg("filtering exhausted, giving up")
 	return nil, ErrUnableToAutoDetectAssetError
+}
+
+func MarshallDebug(x any) {
+	var outBytes []byte
+	var err error
+	if protoMsg, ok := x.(protoreflect.ProtoMessage); ok {
+		opts := protojson.MarshalOptions{
+			Indent: "    ",
+		}
+		outBytes, err = opts.Marshal(protoMsg)
+	} else {
+		outBytes, err = json.MarshalIndent(x, "", "   ")
+	}
+	if err != nil {
+		fmt.Printf("Unable to marshall object for debugging: %v\n", err)
+		panic("unable to marshall")
+	}
+	fmt.Println("\n" + string(outBytes))
 }
 
 func (c *Controller) filterAssets(assets []githubAsset, pat *regexp.Regexp, match bool) []githubAsset {

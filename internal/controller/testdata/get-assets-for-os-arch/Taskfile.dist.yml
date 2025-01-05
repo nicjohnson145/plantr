@@ -20,6 +20,11 @@ tasks:
         REPO: zellij-org/zellij
         TAG: v0.41.2
         NAME: zellij
+    - task: fetch-assets
+      vars:
+        REPO: neovim/neovim
+        TAG: v0.10.3
+        NAME: neovim
 
 
   fetch-assets:

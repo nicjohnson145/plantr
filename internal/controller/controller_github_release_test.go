@@ -58,6 +58,12 @@ func TestGithubRelease_GetAssetForOSArch(t *testing.T) {
 			arch: "arm64",
 			want: "zellij-aarch64-apple-darwin.tar.gz",
 		},
+		{
+			file: "neovim-v0.10.3",
+			os:   "linux",
+			arch: "amd64",
+			want: "nvim-linux64.tar.gz",
+		},
 	}
 
 	ctrl := &Controller{
