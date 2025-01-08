@@ -157,134 +157,141 @@ func (a *Agent) getAccessToken(client controllerv1connect.ControllerServiceClien
 func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) error {
 	var errs []error
 
+
+	noopSkip := func(_ *controllerv1.Seed) bool {
+		return false
+	}
+
 	for _, seed := range seeds {
+		var executeFunc func(context.Context, *controllerv1.Seed) (*InventoryRow, error)
+		var skipInventoryFunc func(*controllerv1.Seed) bool
+		var msg string
+
 		switch concrete := seed.Element.(type) {
 		case *controllerv1.Seed_ConfigFile:
-			if err := a.executeSeed_configFile(ctx, concrete.ConfigFile, seed.Metadata); err != nil {
-				errs = append(errs, fmt.Errorf("error executing config file: %w", err))
-			}
+			msg = fmt.Sprintf("rendering config file %v", concrete.ConfigFile.Destination)
+			executeFunc = a.executeSeed_configFile
+			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_GithubRelease:
-			if err := a.executeSeed_githubRelease(ctx, concrete.GithubRelease, seed.Metadata); err != nil {
-				errs = append(errs, fmt.Errorf("error executing github release: %w", err))
-			}
+			// TODO: pass through the repo name for logging purposes
+			msg = fmt.Sprintf("downloading github_release %v", concrete.GithubRelease.DownloadUrl)
+			executeFunc = a.executeSeed_githubRelease
+			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_SystemPackage:
-			if err := a.executeSeed_systemPackage(ctx, concrete.SystemPackage, seed.Metadata); err != nil {
-				errs = append(errs, fmt.Errorf("error executing system package: %w", err))
-			}
+			// TODO: clever way to get the name?
+			msg = "installing system_package"
+			executeFunc = a.executeSeed_systemPackage
+			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_GitRepo:
-			if err := a.executeSeed_gitRepo(ctx, concrete.GitRepo, seed.Metadata); err != nil {
-				errs = append(errs, fmt.Errorf("error executing git repo: %w", err))
-			}
+			msg = fmt.Sprintf("cloning git_repo %v", concrete.GitRepo.Url)
+			executeFunc = a.executeSeed_gitRepo
+			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_Golang:
-			if err := a.executeSeed_golang(ctx, concrete.Golang, seed.Metadata); err != nil {
-				errs = append(errs, fmt.Errorf("error executing golang: %w", err))
-			}
+			msg = fmt.Sprintf("install go@%v", concrete.Golang.Version)
+			executeFunc = a.executeSeed_golang
+			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_GoInstall:
-			if err := a.executeSeed_goInstall(ctx, concrete.GoInstall, seed.Metadata); err != nil {
-				errs = append(errs, fmt.Errorf("error executing go_install: %w", err))
+			msg = fmt.Sprintf("installing go binary %v", concrete.GoInstall.Package)
+			executeFunc = a.executeSeed_goInstall
+			// If we're not specifying a version, that means "latest", so dont check inventory to guarantee that we try
+			// it again
+			skipInventoryFunc = func(s *controllerv1.Seed) bool {
+				return s.GetGoInstall().Version == nil
 			}
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
+			continue
+		}
+
+		a.log.Info().Msg(msg)
+
+		if !skipInventoryFunc(seed) {
+			row, err := a.inventory.GetRow(ctx, seed.Metadata.Hash)
+			if err != nil {
+				return fmt.Errorf("error reading inventory: %w", err)
+			}
+			if row != nil {
+				a.log.Debug().Msg("already exists in inventory, skipping")
+				continue
+			}
+		}
+		row, err := executeFunc(ctx, seed)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error executing: %w", err))
+			continue
+		}
+
+
+		if row != nil {
+			row.Hash = seed.Metadata.Hash
+			if err := a.inventory.WriteRow(ctx, *row); err != nil {
+				errs = append(errs, fmt.Errorf("error writing to inventory: %w", err))
+				continue
+			}
 		}
 	}
 
 	return errors.Join(errs...)
 }
 
-func (a *Agent) executeSeed_configFile(ctx context.Context, seed *controllerv1.ConfigFile, metadata *controllerv1.Seed_Metadata) error {
-	row, err := a.inventory.GetRow(ctx, metadata.Hash)
-	if err != nil {
-		return fmt.Errorf("error checking inventory: %w", err)
-	}
-	if row != nil {
-		a.log.Debug().Msg("config file found in inventory, skipping")
-		return nil
-	}
+func (a *Agent) executeSeed_configFile(ctx context.Context, pbseed *controllerv1.Seed) (*InventoryRow, error) {
+	seed := pbseed.Element.(*controllerv1.Seed_ConfigFile).ConfigFile
 
 	if err := os.MkdirAll(filepath.Dir(seed.Destination), 0775); err != nil {
-		return fmt.Errorf("error creating containing dir: %w", err)
+		return nil, fmt.Errorf("error creating containing dir: %w", err)
 	}
 	// TODO: configurable permissions
 	if err := os.WriteFile(seed.Destination, []byte(seed.Content), 0644); err != nil { //nolint:gosec // ignore until configurable permissions
-		return fmt.Errorf("error creating file: %w", err)
+		return nil, fmt.Errorf("error creating file: %w", err)
 	}
 
-	err = a.inventory.WriteRow(ctx, InventoryRow{
-		Hash: metadata.Hash,
+	return &InventoryRow{
 		Path: hlp.Ptr(seed.Destination),
-	})
-	if err != nil {
-		return fmt.Errorf("error writing inventory record: %w", err)
-	}
-
-	return nil
+	}, nil
 }
 
-func (a *Agent) executeSeed_systemPackage(ctx context.Context, seed *controllerv1.SystemPackage, metadata *controllerv1.Seed_Metadata) error {
-	row, err := a.inventory.GetRow(ctx, metadata.Hash)
-	if err != nil {
-		return fmt.Errorf("error checking inventory: %w", err)
-	}
-	if row != nil {
-		a.log.Debug().Msg("system package found in inventory, skipping")
-		return nil
-	}
+func (a *Agent) executeSeed_systemPackage(ctx context.Context, pbseed *controllerv1.Seed) (*InventoryRow, error) {
+	seed := pbseed.Element.(*controllerv1.Seed_SystemPackage).SystemPackage
 
-	// Individual functions are responsible for writing
 	switch concrete := seed.Pkg.(type) {
 	case *controllerv1.SystemPackage_Apt:
-		return a.executeSeed_systemPackage_apt(ctx, concrete.Apt, metadata)
+		return a.executeSeed_systemPackage_apt(ctx, concrete.Apt)
 	default:
-		return fmt.Errorf("unhandled system package type of %T", concrete)
+		return nil, fmt.Errorf("unhandled system package type of %T", concrete)
 	}
 }
 
-func (a *Agent) executeSeed_systemPackage_apt(ctx context.Context, pkg *controllerv1.SystemPackage_AptPkg, metadata *controllerv1.Seed_Metadata) error {
+func (a *Agent) executeSeed_systemPackage_apt(_ context.Context, pkg *controllerv1.SystemPackage_AptPkg) (*InventoryRow, error) {
 	// TODO: proper version support & `apt update` cached for the whole run
 	_, stderr, err := ExecuteOSCommand("/bin/sh", "-c", fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive apt install -y %v", pkg.Name))
 	if err != nil {
-		return fmt.Errorf("error during installation: %v\n%v", err, stderr)
+		return nil, fmt.Errorf("error during installation: %v\n%v", err, stderr)
 	}
 
-	err = a.inventory.WriteRow(ctx, InventoryRow{
-		Hash:    metadata.Hash,
+	return &InventoryRow{
 		Package: hlp.Ptr(pkg.Name),
-	})
-	if err != nil {
-		return fmt.Errorf("error writing to inventory: %w", err)
-	}
-
-	return nil
+	}, nil
 }
 
-func (a *Agent) executeSeed_golang(ctx context.Context, golang *controllerv1.Golang, metadata *controllerv1.Seed_Metadata) error {
-	a.log.Info().Msgf("installing golang@%v", golang.Version)
+func (a *Agent) executeSeed_golang(_ context.Context, seed *controllerv1.Seed) (*InventoryRow, error) {
+	golang := seed.Element.(*controllerv1.Seed_Golang).Golang
 
 	if runtime.GOOS != "linux" {
-		return fmt.Errorf("golang install only available for linux OS")
-	}
-
-	row, err := a.inventory.GetRow(ctx, metadata.Hash)
-	if err != nil {
-		return fmt.Errorf("error checking inventory: %w", err)
-	}
-	if row != nil {
-		a.log.Debug().Msg("golang found in inventory, skipping")
-		return nil
+		return nil, fmt.Errorf("golang install only available for linux OS")
 	}
 
 	a.log.Trace().Msg("removing existing installation")
 	// make sure to clean out the old version first per the golang docs. Run this command through the shell so we can
 	// elivate privileges
-	_, _, err = ExecuteOSCommand("/bin/sh", "-c", "sudo rm -rf /usr/local/go")
+	_, _, err := ExecuteOSCommand("/bin/sh", "-c", "sudo rm -rf /usr/local/go")
 	if err != nil {
-		return fmt.Errorf("error removing old golang installation: %w", err)
+		return nil, fmt.Errorf("error removing old golang installation: %w", err)
 	}
 
 	a.log.Trace().Msg("downloading release tarball")
 	dir, err := os.MkdirTemp("", "plantr-golang-")
 	if err != nil {
-		return fmt.Errorf("unable to make temp directory")
+		return nil, fmt.Errorf("unable to make temp directory")
 	}
 	defer os.RemoveAll(dir)
 
@@ -295,57 +302,41 @@ func (a *Agent) executeSeed_golang(ctx context.Context, golang *controllerv1.Gol
 		ToFile(filepath).
 		Fetch(context.Background())
 	if err != nil {
-		return fmt.Errorf("error downloading tarball: %w", err)
+		return nil, fmt.Errorf("error downloading tarball: %w", err)
 	}
 
 	a.log.Trace().Msg("extracting tarball")
 	// Execute this through the shell so we can elevate privileges with sudo
 	_, _, err = ExecuteOSCommand("/bin/sh", "-c", fmt.Sprintf("sudo tar -C /usr/local -xzf %v", filepath))
 	if err != nil {
-		return fmt.Errorf("error unpacking tarball: %w", err)
+		return nil, fmt.Errorf("error unpacking tarball: %w", err)
 	}
 
-	err = a.inventory.WriteRow(ctx, InventoryRow{
-		Hash: metadata.Hash,
+	return &InventoryRow{
 		Path: hlp.Ptr("/usr/local/go"),
-	})
-	if err != nil {
-		return fmt.Errorf("error writing inventory: %w", err)
-	}
-
-	return nil
+	}, nil
 }
 
-func (a *Agent) executeSeed_goInstall(ctx context.Context, install *controllerv1.GoInstall, metadata *controllerv1.Seed_Metadata) error {
+func (a *Agent) executeSeed_goInstall(ctx context.Context, seed *controllerv1.Seed) (*InventoryRow, error) {
+	install := seed.Element.(*controllerv1.Seed_GoInstall).GoInstall
+
 	gopath, err := exec.LookPath("go")
 	if err != nil {
-		return fmt.Errorf("go not found in $PATH")
+		return nil, fmt.Errorf("go not found in $PATH")
 	}
 
 	// Only check inventory if we're not installing "latest", otherwise just re-install it anyways
 	version := "latest"
 	if install.Version != nil {
 		version = *install.Version
-		row, err := a.inventory.GetRow(ctx, metadata.Hash)
-		if err != nil {
-			return fmt.Errorf("error checking inventory: %w", err)
-		}
-		if row != nil {
-			return nil
-		}
 	}
 
-	_, _, err = ExecuteOSCommand(gopath, "install", install.Package + "@" + version)
+	_, _, err = ExecuteOSCommand(gopath, "install", install.Package+"@"+version)
 	if err != nil {
-		return fmt.Errorf("error installing package: %w", err)
+		return nil, fmt.Errorf("error installing package: %w", err)
 	}
 
-	err = a.inventory.WriteRow(ctx, InventoryRow{
-		Hash: metadata.Hash,
-	})
-	if err != nil {
-		return fmt.Errorf("error writing inventory: %w", err)
-	}
-
-	return nil
+	return &InventoryRow{
+		Package: hlp.Ptr(install.Package),
+	}, nil
 }

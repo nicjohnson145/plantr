@@ -13,20 +13,13 @@ import (
 	"github.com/nicjohnson145/plantr/internal/util"
 )
 
-func (a *Agent) executeSeed_gitRepo(ctx context.Context, pbRepo *controllerv1.GitRepo, metadata *controllerv1.Seed_Metadata) error {
-	row, err := a.inventory.GetRow(ctx, metadata.Hash)
-	if err != nil {
-		return fmt.Errorf("error reading inventory: %w", err)
-	}
-	if row != nil {
-		a.log.Debug().Msg("git repo found in inventory, skipping")
-		return nil
-	}
+func (a *Agent) executeSeed_gitRepo(ctx context.Context, pbseed *controllerv1.Seed) (*InventoryRow, error) {
+	pbRepo := pbseed.Element.(*controllerv1.Seed_GitRepo).GitRepo
 
 	// Does the location already exist?
 	exists, err := util.PathExists(pbRepo.Location)
 	if err != nil {
-		return fmt.Errorf("error determining repo existence: %w", err)
+		return nil, fmt.Errorf("error determining repo existence: %w", err)
 	}
 
 	var repoFunc func(*controllerv1.GitRepo) (*git.Repository, error)
@@ -38,45 +31,28 @@ func (a *Agent) executeSeed_gitRepo(ctx context.Context, pbRepo *controllerv1.Gi
 
 	repo, err := repoFunc(pbRepo)
 	if err != nil {
-		return fmt.Errorf("error checking out repo: %w", err)
+		return nil, fmt.Errorf("error checking out repo: %w", err)
 	}
 
 	// Fetch latest, so we dont try to lookup a tag that doesnt exist on our local
 	if err := a.fetchLatest(repo); err != nil {
-		return fmt.Errorf("error fetching latest: %w", err)
+		return nil, fmt.Errorf("error fetching latest: %w", err)
 	}
 
 	// Translate our desired reference into a commit hash
 	wantHash, err := a.translateToHash(pbRepo, repo)
 	if err != nil {
-		return fmt.Errorf("error translating desired ref: %w", err)
+		return nil, fmt.Errorf("error translating desired ref: %w", err)
 	}
 
-	// Check and see what the current checkout is
-	head, err := repo.Head()
-	if err != nil {
-		return fmt.Errorf("error getting repo HEAD: %w", err)
-	}
-
-	// If they match, nothing to do
-	if wantHash == head.Hash().String() {
-		return nil
-	}
-
-	// Otherwise, checkout that new desired hash
+	// Checkout that new desired hash
 	if err := a.checkoutCommit(repo, wantHash); err != nil {
-		return fmt.Errorf("error checking out commit: %w", err)
+		return nil, fmt.Errorf("error checking out commit: %w", err)
 	}
 
-	err = a.inventory.WriteRow(ctx, InventoryRow{
-		Hash: metadata.Hash,
+	return &InventoryRow{
 		Path: hlp.Ptr(pbRepo.Location),
-	})
-	if err != nil {
-		return fmt.Errorf("error writing inventory: %w", err)
-	}
-
-	return nil
+	}, nil
 }
 
 func (a *Agent) checkoutRepo(pbRepo *controllerv1.GitRepo) (*git.Repository, error) {

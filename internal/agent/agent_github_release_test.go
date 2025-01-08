@@ -39,14 +39,18 @@ func TestExecuteGithubRelease(t *testing.T) {
 			Inventory: NewNoopInventory(NoopInventoryConfig{}),
 		})
 
-		require.NoError(t, a.executeSeed_githubRelease(
+		_, err = a.executeSeed_githubRelease(
 			context.Background(),
-			&controllerv1.GithubRelease{
-				DownloadUrl:          downloadURL,
-				DestinationDirectory: destDir,
+			&controllerv1.Seed{
+				Element: &controllerv1.Seed_GithubRelease{
+					GithubRelease: &controllerv1.GithubRelease{
+						DownloadUrl:          downloadURL,
+						DestinationDirectory: destDir,
+					},
+				},
 			},
-			&controllerv1.Seed_Metadata{},
-		))
+		)
+		require.NoError(t, err)
 
 		// <tmp>/bin/bat should now exist
 		_, err = os.Stat(filepath.Join(destDir, "bat"))
@@ -78,15 +82,19 @@ func TestExecuteGithubRelease(t *testing.T) {
 			Inventory: NewNoopInventory(NoopInventoryConfig{}),
 		})
 
-		require.NoError(t, a.executeSeed_githubRelease(
+		_, err = a.executeSeed_githubRelease(
 			context.Background(),
-			&controllerv1.GithubRelease{
-				DownloadUrl:          downloadURL,
-				DestinationDirectory: destDir,
-				NameOverride:         hlp.Ptr("bat2"),
+			&controllerv1.Seed{
+				Element: &controllerv1.Seed_GithubRelease{
+					GithubRelease: &controllerv1.GithubRelease{
+						DownloadUrl:          downloadURL,
+						DestinationDirectory: destDir,
+						NameOverride:         hlp.Ptr("bat2"),
+					},
+				},
 			},
-			&controllerv1.Seed_Metadata{},
-		))
+		)
+		require.NoError(t, err)
 
 		// <tmp>/bin/bat should now exist
 		_, err = os.Stat(filepath.Join(destDir, "bat2"))
@@ -118,16 +126,20 @@ func TestExecuteGithubRelease(t *testing.T) {
 			Inventory: NewNoopInventory(NoopInventoryConfig{}),
 		})
 
-		require.NoError(t, a.executeSeed_githubRelease(
+		_, err = a.executeSeed_githubRelease(
 			context.Background(),
-			&controllerv1.GithubRelease{
-				DownloadUrl:          downloadURL,
-				DestinationDirectory: destDir,
-				NameOverride:         hlp.Ptr("neovim"),
-				ArchiveRelease:       true,
+			&controllerv1.Seed{
+				Element: &controllerv1.Seed_GithubRelease{
+					GithubRelease: &controllerv1.GithubRelease{
+						DownloadUrl:          downloadURL,
+						DestinationDirectory: destDir,
+						NameOverride:         hlp.Ptr("neovim"),
+						ArchiveRelease:       true,
+					},
+				},
 			},
-			&controllerv1.Seed_Metadata{},
-		))
+		)
+		require.NoError(t, err)
 
 		// <tmp>/bin/neovim should exist and be a directory
 		info, err := os.Stat(filepath.Join(destDir, "neovim"))

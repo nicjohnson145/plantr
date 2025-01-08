@@ -22,24 +22,16 @@ var (
 	)
 )
 
-func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv1.GithubRelease, metadata *controllerv1.Seed_Metadata) error {
-	row, err := a.inventory.GetRow(ctx, metadata.Hash)
-	if err != nil {
-		return fmt.Errorf("error checking inventory: %w", err)
-	}
-
-	if row != nil {
-		a.log.Debug().Msg("release present in inventory, skipping")
-		return nil
-	}
+func (a *Agent) executeSeed_githubRelease(ctx context.Context, pbseed *controllerv1.Seed) (*InventoryRow, error) {
+	seed := pbseed.Element.(*controllerv1.Seed_GithubRelease).GithubRelease
 
 	if err := os.MkdirAll(seed.DestinationDirectory, 0775); err != nil {
-		return fmt.Errorf("error creating binary directory: %w", err)
+		return nil, fmt.Errorf("error creating binary directory: %w", err)
 	}
 
 	dir, err := os.MkdirTemp("", "plantr-agent")
 	if err != nil {
-		return fmt.Errorf("error creating scratch directory: %w", err)
+		return nil, fmt.Errorf("error creating scratch directory: %w", err)
 	}
 	defer os.RemoveAll(dir)
 
@@ -54,7 +46,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 		builder = builder.Header("Authorization", seed.Authentication.BearerAuth)
 	}
 	if err := builder.Fetch(context.Background()); err != nil {
-		return fmt.Errorf("error executing download: %w", err)
+		return nil, fmt.Errorf("error executing download: %w", err)
 	}
 
 	var extractor archives.Extractor
@@ -67,18 +59,18 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 	if isArchive {
 		fl, err := os.Open(tmpPath)
 		if err != nil {
-			return fmt.Errorf("error opening file for reading: %w", err)
+			return nil, fmt.Errorf("error opening file for reading: %w", err)
 		}
 		defer fl.Close()
 
 		a, s, err := archives.Identify(ctx, filename, fl)
 		if err != nil {
-			return fmt.Errorf("error detecting archive type: %w", err)
+			return nil, fmt.Errorf("error detecting archive type: %w", err)
 		}
 
 		ex, ok := a.(archives.Extractor)
 		if !ok {
-			return fmt.Errorf("does not implement Extractor, cannot procde")
+			return nil, fmt.Errorf("does not implement Extractor, cannot procde")
 		}
 
 		extractor = ex
@@ -95,7 +87,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 		targetPath := filepath.Join(seed.DestinationDirectory, targetDir)
 
 		if err := os.MkdirAll(targetPath, 0775); err != nil {
-			return fmt.Errorf("error making target extraction directory: %w", err)
+			return nil, fmt.Errorf("error making target extraction directory: %w", err)
 		}
 
 		err = extractor.Extract(ctx, stream, func(ctx context.Context, info archives.FileInfo) error {
@@ -134,10 +126,12 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 			return nil
 		})
 		if err != nil {
-			return fmt.Errorf("error extracting archive: %w", err)
+			return nil, fmt.Errorf("error extracting archive: %w", err)
 		}
 
-		return nil
+		return &InventoryRow{
+			Path: &targetPath,
+		}, nil
 	} else if isArchive { // we should extract a single binary from the archive
 		executableFiles := map[string][]byte{}
 		err := extractor.Extract(ctx, stream, func(ctx context.Context, info archives.FileInfo) error {
@@ -166,10 +160,10 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 			return nil
 		})
 		if err != nil {
-			return fmt.Errorf("error extracting archive: %w", err)
+			return nil, fmt.Errorf("error extracting archive: %w", err)
 		}
 		if len(executableFiles) != 1 {
-			return fmt.Errorf("expected to find 1 executable file, instead found %v", len(executableFiles))
+			return nil, fmt.Errorf("expected to find 1 executable file, instead found %v", len(executableFiles))
 		}
 		name := hlp.Keys(executableFiles)[0]
 		binaryContent = executableFiles[name]
@@ -177,7 +171,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 	} else { // the asset is already only a single binary
 		content, err := os.ReadFile(tmpPath)
 		if err != nil {
-			return fmt.Errorf("error reading file contents: %w", err)
+			return nil, fmt.Errorf("error reading file contents: %w", err)
 		}
 		binaryContent = content
 		destName = filepath.Base(tmpPath)
@@ -189,18 +183,12 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, seed *controllerv
 
 	outPath := filepath.Join(seed.DestinationDirectory, destName)
 	if err := os.WriteFile(outPath, binaryContent, 0755); err != nil { //nolint: gosec // it has to be executable, its an executable binary
-		return fmt.Errorf("error writing final output path: %w", err)
+		return nil, fmt.Errorf("error writing final output path: %w", err)
 	}
 
-	err = a.inventory.WriteRow(ctx, InventoryRow{
-		Hash: metadata.Hash,
+	return &InventoryRow{
 		Path: hlp.Ptr(outPath),
-	})
-	if err != nil {
-		return fmt.Errorf("error writing release to inventory: %w", err)
-	}
-
-	return nil
+	}, nil
 }
 
 func fullTrimSuffix(name string) string {
