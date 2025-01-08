@@ -40,7 +40,7 @@ const (
 	GitAccessToken      = "git.access_token"
 	GitUrl              = "git.url"
 
-	GithubWebhookSecret = "github.webhook_secret"
+	GithubWebhookSecret = "github.webhook_secret" //nolint:gosec // its env config, relax
 
 	GitStaticCheckoutPath = "git.static.checkout_path"
 

@@ -28,4 +28,5 @@ COPY hack/functional-test/test.sh test.sh
 RUN chmod +x /home/newuser/test.sh
 USER newuser
 COPY --from=builder /src/plantr-agent /bin/plantr-agent
+ENV PATH="/usr/local/go/bin:$PATH"
 ENTRYPOINT ["/bin/plantr-agent"]

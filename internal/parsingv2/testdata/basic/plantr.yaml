@@ -6,6 +6,8 @@ roles:
         destination: ~/some-config
     - golang:
         version: 1.23.1
+    - go_install:
+        package: github.com/go-delve/delve/cmd/dlv
 nodes:
 - id: 01JD340PST4R6PY8EDZ5JW127T
   hostname: foo-host

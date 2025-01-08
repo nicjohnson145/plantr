@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/nicjohnson145/hlp"
 	configv1 "github.com/nicjohnson145/plantr/gen/plantr/config/v1"
 	"github.com/psanford/memfs"
 	"github.com/stretchr/testify/require"
@@ -344,6 +345,109 @@ func TestGitRepo(t *testing.T) {
 			tc.modFunc(validObj)
 
 			_, err := parseSeed_gitRepo(validObj)
+			if tc.err == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}
+
+func TestGolang(t *testing.T) {
+	t.Parallel()
+
+	valid := func() *configv1.Golang {
+		return &configv1.Golang{
+			Version: "some-version",
+		}
+	}
+
+	testData := []struct {
+		name    string
+		modFunc func(x *configv1.Golang)
+		err     string
+	}{
+		{
+			name:    "valid",
+			modFunc: func(x *configv1.Golang) {},
+			err:     "",
+		},
+		{
+			name: "no version",
+			modFunc: func(x *configv1.Golang) {
+				x.Version = ""
+			},
+			err: "version is a required field",
+		},
+	}
+	for _, tc := range testData {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			validObj := valid()
+			tc.modFunc(validObj)
+
+			_, err := parseRole(nil, []*configv1.Seed{{
+				Element: &configv1.Seed_Golang{
+					Golang: validObj,
+				},
+			}})
+			if tc.err == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}
+
+func TestGoInstall(t *testing.T) {
+	t.Parallel()
+
+	valid := func() *configv1.GoInstall {
+		return &configv1.GoInstall{
+			Package: "some-package",
+		}
+	}
+
+	testData := []struct {
+		name    string
+		modFunc func(x *configv1.GoInstall)
+		err     string
+	}{
+		{
+			name:    "valid",
+			modFunc: func(x *configv1.GoInstall) {},
+			err:     "",
+		},
+		{
+			name: "valid with version",
+			modFunc: func(x *configv1.GoInstall) {
+				x.Version = hlp.Ptr("some-version")
+			},
+			err: "",
+		},
+		{
+			name: "no package",
+			modFunc: func(x *configv1.GoInstall) {
+				x.Package = ""
+			},
+			err: "package is a required field",
+		},
+	}
+	for _, tc := range testData {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			validObj := valid()
+			tc.modFunc(validObj)
+
+			_, err := parseRole(nil, []*configv1.Seed{{
+				Element: &configv1.Seed_GoInstall{
+					GoInstall: validObj,
+				},
+			}})
 			if tc.err == "" {
 				require.NoError(t, err)
 			} else {

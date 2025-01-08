@@ -85,6 +85,15 @@ message Golang {
   }];
 }
 
+message GoInstall {
+  string package = 1 [(buf.validate.field).cel = {
+    id: "GoInstall.package",
+    message: "package is a required field",
+    expression: "size(this) > 0",
+  }];
+  optional string version = 2;
+}
+
 message Seed {
   oneof element {
     option (buf.validate.oneof).required = true;
@@ -93,6 +102,7 @@ message Seed {
     SystemPackage system_package = 3;
     GitRepo git_repo = 4;
     Golang golang = 5;
+    GoInstall go_install = 6;
   }
 }
 

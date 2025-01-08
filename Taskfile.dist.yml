@@ -126,7 +126,7 @@ tasks:
       GIT_ACCESS_TOKEN: "{{ .GIT_ACCESS_TOKEN }}"
     cmds:
     - docker compose up -d --build --wait
-    - defer: docker compose down --volumes
+    #- defer: docker compose down --volumes
     - sleep 3 # TODO: this is trash, real health checks plz
     - grpcurl -plaintext localhost:9090 plantr.agent.v1.AgentService/Sync
     - docker compose exec -it agent /bin/bash /home/newuser/test.sh

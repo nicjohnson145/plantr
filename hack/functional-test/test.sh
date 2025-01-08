@@ -27,3 +27,6 @@ if [[ "$(go version)" != "go version go1.23.0 linux/amd64" ]]; then
     echo "correct go version not installed"
     exit 1
 fi
+
+# dlv should be installed
+~/go/bin/dlv -h

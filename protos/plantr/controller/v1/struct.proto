@@ -46,6 +46,11 @@ message Golang {
   string version = 1;
 }
 
+message GoInstall {
+  string package = 1;
+  optional string version = 2;
+}
+
 message Seed {
   message Metadata {
     string hash = 1;
@@ -58,5 +63,6 @@ message Seed {
     SystemPackage system_package = 4;
     GitRepo git_repo = 5;
     Golang golang = 6;
+    GoInstall go_install = 7;
   }
 }

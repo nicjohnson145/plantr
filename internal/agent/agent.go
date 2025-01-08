@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -178,6 +179,10 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 			if err := a.executeSeed_golang(ctx, concrete.Golang, seed.Metadata); err != nil {
 				errs = append(errs, fmt.Errorf("error executing golang: %w", err))
 			}
+		case *controllerv1.Seed_GoInstall:
+			if err := a.executeSeed_goInstall(ctx, concrete.GoInstall, seed.Metadata); err != nil {
+				errs = append(errs, fmt.Errorf("error executing go_install: %w", err))
+			}
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
 		}
@@ -303,6 +308,40 @@ func (a *Agent) executeSeed_golang(ctx context.Context, golang *controllerv1.Gol
 	err = a.inventory.WriteRow(ctx, InventoryRow{
 		Hash: metadata.Hash,
 		Path: hlp.Ptr("/usr/local/go"),
+	})
+	if err != nil {
+		return fmt.Errorf("error writing inventory: %w", err)
+	}
+
+	return nil
+}
+
+func (a *Agent) executeSeed_goInstall(ctx context.Context, install *controllerv1.GoInstall, metadata *controllerv1.Seed_Metadata) error {
+	gopath, err := exec.LookPath("go")
+	if err != nil {
+		return fmt.Errorf("go not found in $PATH")
+	}
+
+	// Only check inventory if we're not installing "latest", otherwise just re-install it anyways
+	version := "latest"
+	if install.Version != nil {
+		version = *install.Version
+		row, err := a.inventory.GetRow(ctx, metadata.Hash)
+		if err != nil {
+			return fmt.Errorf("error checking inventory: %w", err)
+		}
+		if row != nil {
+			return nil
+		}
+	}
+
+	_, _, err = ExecuteOSCommand(gopath, "install", install.Package + "@" + version)
+	if err != nil {
+		return fmt.Errorf("error installing package: %w", err)
+	}
+
+	err = a.inventory.WriteRow(ctx, InventoryRow{
+		Hash: metadata.Hash,
 	})
 	if err != nil {
 		return fmt.Errorf("error writing inventory: %w", err)

@@ -279,7 +279,7 @@ func (c *Controller) handleGithubWebhook(req *http.Request) error {
 }
 
 func (c *Controller) validateGithubRequest(req *http.Request) ([]byte, error) {
-	if c.githubWebhookSecret == nil || len(c.githubWebhookSecret) == 0 {
+	if len(c.githubWebhookSecret) == 0 {
 		return nil, fmt.Errorf("github webhook secret not set")
 	}
 
@@ -295,6 +295,9 @@ func (c *Controller) validateGithubRequest(req *http.Request) ([]byte, error) {
 
 	mac := hmac.New(sha256.New, c.githubWebhookSecret)
 	_, err = mac.Write(body)
+	if err != nil {
+		return nil, fmt.Errorf("error computing hash: %w", err)
+	}
 	computed := hex.EncodeToString(mac.Sum(nil))
 
 	if !hmac.Equal([]byte(strings.TrimPrefix(digest, "sha256=")), []byte(computed)) {
@@ -514,6 +517,12 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 					Golang: c.renderSeed_golang(concrete),
 				},
 			}
+		case *parsingv2.GoInstall:
+			outSeeds[i] = &pbv1.Seed{
+				Element: &pbv1.Seed_GoInstall{
+					GoInstall: c.renderSeed_goInstall(concrete),
+				},
+			}
 
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
@@ -591,5 +600,12 @@ func (c *Controller) renderSeed_gitRepo(repo *parsingv2.GitRepo, node *parsingv2
 func (c *Controller) renderSeed_golang(golang *parsingv2.Golang) *pbv1.Golang {
 	return &pbv1.Golang{
 		Version: golang.Version,
+	}
+}
+
+func (c *Controller) renderSeed_goInstall(goinstall *parsingv2.GoInstall) *pbv1.GoInstall {
+	return &pbv1.GoInstall{
+		Package: goinstall.Package,
+		Version: goinstall.Version,
 	}
 }

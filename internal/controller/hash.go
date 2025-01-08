@@ -3,7 +3,7 @@ package controller
 import (
 	"crypto/md5" //nolint:gosec // its for fingerprinting, it doesnt have to be cryptographically secure
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
@@ -53,6 +53,14 @@ func seedHash(x *parsingv2.Seed) string {
 			"Golang",
 			concrete.Version,
 		}
+	case *parsingv2.GoInstall:
+		parts = []string{
+			"GoInstall",
+			concrete.Package,
+		}
+		if concrete.Version != nil {
+			parts = append(parts, *concrete.Version)
+		}
 	default:
 		panic(fmt.Sprintf("unhandled seed type %T", concrete))
 	}
@@ -61,7 +69,31 @@ func seedHash(x *parsingv2.Seed) string {
 }
 
 func sortSeeds(seeds []*parsingv2.Seed) {
-	sort.Slice(seeds, func(i, j int) bool {
-		return strings.Compare(seedHash(seeds[i]), seedHash(seeds[j])) < 0
+	ordering := []string{
+		fmt.Sprintf("%T", &parsingv2.ConfigFile{}),
+		fmt.Sprintf("%T", &parsingv2.GitRepo{}),
+		fmt.Sprintf("%T", &parsingv2.GithubRelease{}),
+		fmt.Sprintf("%T", &parsingv2.SystemPackage{}),
+		fmt.Sprintf("%T", &parsingv2.Golang{}),
+		fmt.Sprintf("%T", &parsingv2.GoInstall{}),
+	}
+	orderMap := map[string]int{}
+	for idx, val := range ordering {
+		orderMap[val] = idx
+	}
+
+	slices.SortFunc(seeds, func(a *parsingv2.Seed, b *parsingv2.Seed) int {
+		aVal := orderMap[fmt.Sprintf("%T", a.Element)]
+		bVal := orderMap[fmt.Sprintf("%T", b.Element)]
+
+		if aVal != bVal {
+			if aVal < bVal {
+				return -1
+			} else {
+				return 1
+			}
+		}
+
+		return strings.Compare(seedHash(a), seedHash(b))
 	})
 }

@@ -63,3 +63,8 @@ type GitRepo struct {
 type Golang struct {
 	Version string
 }
+
+type GoInstall struct {
+	Package string
+	Version *string
+}
