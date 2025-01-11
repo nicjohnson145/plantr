@@ -27,6 +27,11 @@ var (
 	ErrSyncInProgressError = errors.New("sync already in progress")
 )
 
+var (
+	// escape hatch for unit tests to handle the "update" portion of system update
+	unitTestSystemUpdateFunc func() error
+)
+
 type AgentConfig struct {
 	Logger            zerolog.Logger
 	NodeID            string
@@ -161,10 +166,21 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 	noopSkip := func(_ *controllerv1.Seed) bool {
 		return false
 	}
+	noopPreExecute := func() error {
+		return nil
+	}
+	sysUpdateFunc, err := a.getSystemPackageUpdateFunc(seeds)
+	if err != nil {
+		return fmt.Errorf("error getting system_package update function: %w", err)
+	}
+	preSystemUpdate := sync.OnceValue(func() error {
+		return sysUpdateFunc()
+	})
 
 	for _, seed := range seeds {
 		var executeFunc func(context.Context, *controllerv1.Seed) (*InventoryRow, error)
 		var skipInventoryFunc func(*controllerv1.Seed) bool
+		var preExecuteFunc func() error
 		var msg string
 
 		switch concrete := seed.Element.(type) {
@@ -172,22 +188,27 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 			msg = fmt.Sprintf("rendering config file %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_configFile
 			skipInventoryFunc = noopSkip
+			preExecuteFunc = noopPreExecute
 		case *controllerv1.Seed_GithubRelease:
 			msg = fmt.Sprintf("downloading github_release %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_githubRelease
 			skipInventoryFunc = noopSkip
+			preExecuteFunc = noopPreExecute
 		case *controllerv1.Seed_SystemPackage:
 			msg = fmt.Sprintf("installing system_package %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_systemPackage
 			skipInventoryFunc = noopSkip
+			preExecuteFunc = preSystemUpdate
 		case *controllerv1.Seed_GitRepo:
 			msg = fmt.Sprintf("cloning git_repo %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_gitRepo
 			skipInventoryFunc = noopSkip
+			preExecuteFunc = noopPreExecute
 		case *controllerv1.Seed_Golang:
 			msg = fmt.Sprintf("installing %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_golang
 			skipInventoryFunc = noopSkip
+			preExecuteFunc = noopPreExecute
 		case *controllerv1.Seed_GoInstall:
 			msg = fmt.Sprintf("installing go binary %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_goInstall
@@ -196,10 +217,12 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 			skipInventoryFunc = func(s *controllerv1.Seed) bool {
 				return s.GetGoInstall().Version == nil
 			}
+			preExecuteFunc = noopPreExecute
 		case *controllerv1.Seed_UrlDownload:
 			msg = fmt.Sprintf("downloading %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_urlDownload
 			skipInventoryFunc = noopSkip
+			preExecuteFunc = noopPreExecute
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
 			continue
@@ -217,6 +240,11 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 				continue
 			}
 		}
+
+		if err := preExecuteFunc(); err != nil {
+			return fmt.Errorf("error execute executing pre-execute func: %w", err)
+		}
+
 		row, err := executeFunc(ctx, seed)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error executing: %w", err))
@@ -301,6 +329,37 @@ func (a *Agent) executeSeed_systemPackage_apt(_ context.Context, pkg *controller
 	}, nil
 }
 
+func (a *Agent) getSystemPackageUpdateFunc(seeds []*controllerv1.Seed) (func() error, error) {
+	// Only for unit testing purposes
+	if unitTestSystemUpdateFunc != nil {
+		return unitTestSystemUpdateFunc, nil
+	}
+
+	idx := hlp.First(seeds, func(x *controllerv1.Seed) bool {
+		return x.GetSystemPackage() != nil
+	})
+	// If there are not system packages, then it doesnt matter, return noop function
+	if idx == -1 {
+		return func() error { return nil }, nil
+	}
+
+	// Otherwise, all the system packages should be the same, so figure out which package manager we are and return the
+	// appropriate "update" command for that manager
+	switch concrete := seeds[idx].GetSystemPackage().Pkg.(type) {
+	case *controllerv1.SystemPackage_Apt:
+		return func() error {
+			a.log.Debug().Msg("executing `sudo apt update`")
+			_, stderr, err := ExecuteOSCommand("/bin/sh", "-c", "sudo DEBIAN_FRONTEND=noninteractive apt update")
+			if err != nil {
+				return fmt.Errorf("error during update: %v\n%v", err, stderr)
+			}
+			return nil
+		}, nil
+	default:
+		return nil, fmt.Errorf("unhandled package type %T", concrete)
+	}
+}
+
 func (a *Agent) executeSeed_golang(_ context.Context, seed *controllerv1.Seed) (*InventoryRow, error) {
 	golang := seed.Element.(*controllerv1.Seed_Golang).Golang
 
@@ -353,7 +412,6 @@ func (a *Agent) executeSeed_goInstall(ctx context.Context, seed *controllerv1.Se
 		return nil, fmt.Errorf("go not found in $PATH")
 	}
 
-	// Only check inventory if we're not installing "latest", otherwise just re-install it anyways
 	version := "latest"
 	if install.Version != nil {
 		version = *install.Version

@@ -209,6 +209,10 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/nicjohnson145/hlp v0.7.0 h1:d0jWotvtN2fsqZolcVf217M7ojHnMS2+ZOlNsxS9UcI=
 github.com/nicjohnson145/hlp v0.7.0/go.mod h1:daz4HTZ6Z8KsDCVpjaqskHuPQ3jankOvh3SjCxlIJmE=
+github.com/nicjohnson145/hlp v0.8.0 h1:TLZn+MTsj/L+pusDpMoaAJEOoNRjNFJvycIYZ+vV62k=
+github.com/nicjohnson145/hlp v0.8.0/go.mod h1:daz4HTZ6Z8KsDCVpjaqskHuPQ3jankOvh3SjCxlIJmE=
+github.com/nicjohnson145/hlp v0.9.0 h1:C74C5h28qZFWTe5Fx9PPxz5OY5/bk77TqxsQahNUsSk=
+github.com/nicjohnson145/hlp v0.9.0/go.mod h1:daz4HTZ6Z8KsDCVpjaqskHuPQ3jankOvh3SjCxlIJmE=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.4.0.20241112120701-034e449c6e78 h1:MYzLheyVx1tJVDqfu3YnN4jtnyALNzLvwl+f58TcvQY=
 github.com/nwaples/rardecode/v2 v2.0.0-beta.4.0.20241112120701-034e449c6e78/go.mod h1:yntwv/HfMc/Hbvtq9I19D1n58te3h6KsqCf3GxyfBGY=
 github.com/oklog/ulid/v2 v2.1.0 h1:+9lhoxAP56we25tyYETBBY1YLA2SaoLvUFgrP2miPJU=

@@ -17,7 +17,7 @@ require (
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mholt/archives v0.1.0
-	github.com/nicjohnson145/hlp v0.7.0
+	github.com/nicjohnson145/hlp v0.9.0
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/psanford/memfs v0.0.0-20241019191636-4ef911798f9b
 	github.com/qdm12/reprint v0.0.0-20200326205758-722754a53494
