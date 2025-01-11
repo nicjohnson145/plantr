@@ -10,6 +10,12 @@ import (
 const (
 	LoggingLevel  = "log.level"
 	LoggingFormat = "log.format"
+
+	InitControllerAddress = "init.controller_address"
+	InitNodeID            = "init.node_id"
+	InitUserHome          = "init.user_home"
+	InitPackageManager    = "init.package_manager"
+	InitPublicKeyPath     = "init.public_key_path"
 )
 
 var (
