@@ -68,3 +68,8 @@ type GoInstall struct {
 	Package string
 	Version *string
 }
+
+type UrlDownload struct {
+	NameOverride *string
+	Urls map[string]map[string]string
+}

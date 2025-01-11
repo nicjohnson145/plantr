@@ -30,3 +30,6 @@ fi
 
 # dlv should be installed
 ~/go/bin/dlv -h
+
+# kubectl should be installed
+~/bin/kubectl --help || "kubectl unsuccessful"

@@ -61,6 +61,20 @@ func seedHash(x *parsingv2.Seed) string {
 		if concrete.Version != nil {
 			parts = append(parts, *concrete.Version)
 		}
+	// This is actually not a great hash, but this is the only seed that depends on the node thats being input for its
+	// uniquness. So we're just gonna let it slide
+	case *parsingv2.UrlDownload:
+		parts = []string{
+			"UrlDownload",
+		}
+		if concrete.NameOverride != nil {
+			parts = append(parts, *concrete.NameOverride)
+		}
+		for _, archMap := range concrete.Urls {
+			for _, url := range archMap {
+				parts = append(parts, url)
+			}
+		}
 	default:
 		panic(fmt.Sprintf("unhandled seed type %T", concrete))
 	}
@@ -74,6 +88,7 @@ func sortSeeds(seeds []*parsingv2.Seed) {
 		fmt.Sprintf("%T", &parsingv2.GitRepo{}),
 		fmt.Sprintf("%T", &parsingv2.GithubRelease{}),
 		fmt.Sprintf("%T", &parsingv2.SystemPackage{}),
+		fmt.Sprintf("%T", &parsingv2.UrlDownload{}),
 		fmt.Sprintf("%T", &parsingv2.Golang{}),
 		fmt.Sprintf("%T", &parsingv2.GoInstall{}),
 	}

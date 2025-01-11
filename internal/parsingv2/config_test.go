@@ -456,3 +456,66 @@ func TestGoInstall(t *testing.T) {
 		})
 	}
 }
+
+func TestUrlDownload(t *testing.T) {
+	t.Parallel()
+
+	valid := func() *configv1.UrlDownload {
+		return &configv1.UrlDownload{
+			Urls: &configv1.UrlDownload_OsGroup{
+				Linux: &configv1.UrlDownload_OsGroup_ArchGroup{
+					Amd64: hlp.Ptr("some-linux-amd64-url"),
+				},
+				Mac: &configv1.UrlDownload_OsGroup_ArchGroup{
+					Amd64: hlp.Ptr("some-mac-amd64-url"),
+				},
+			},
+		}
+	}
+
+	testData := []struct {
+		name    string
+		modFunc func(x *configv1.UrlDownload)
+		err     string
+	}{
+		{
+			name:    "valid",
+			modFunc: func(x *configv1.UrlDownload) {},
+			err:     "",
+		},
+		{
+			name:    "valid single url",
+			modFunc: func(x *configv1.UrlDownload) {
+				x.Urls.Mac = nil
+			},
+			err:     "",
+		},
+		{
+			name:    "no urls",
+			modFunc: func(x *configv1.UrlDownload) {
+				x.Urls.Mac = nil
+				x.Urls.Linux = nil
+			},
+			err:     "must specify at least one OS/Arch url",
+		},
+	}
+	for _, tc := range testData {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			validObj := valid()
+			tc.modFunc(validObj)
+
+			_, err := parseRole(nil, []*configv1.Seed{{
+				Element: &configv1.Seed_UrlDownload{
+					UrlDownload: validObj,
+				},
+			}})
+			if tc.err == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}

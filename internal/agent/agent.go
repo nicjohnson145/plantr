@@ -199,6 +199,10 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 			skipInventoryFunc = func(s *controllerv1.Seed) bool {
 				return s.GetGoInstall().Version == nil
 			}
+		case *controllerv1.Seed_UrlDownload:
+			msg = fmt.Sprintf("downloading %v", concrete.UrlDownload.DownloadUrl)
+			executeFunc = a.executeSeed_urlDownload
+			skipInventoryFunc = noopSkip
 		default:
 			a.log.Warn().Msgf("dropping unknown seed type %T", concrete)
 			continue
@@ -248,6 +252,32 @@ func (a *Agent) executeSeed_configFile(ctx context.Context, pbseed *controllerv1
 
 	return &InventoryRow{
 		Path: hlp.Ptr(seed.Destination),
+	}, nil
+}
+
+func (a *Agent) executeSeed_githubRelease(ctx context.Context, pbseed *controllerv1.Seed) (*InventoryRow, error) {
+	seed := pbseed.Element.(*controllerv1.Seed_GithubRelease).GithubRelease
+
+	resp, err := DownloadFromUrl(ctx, &DownloadRequest{
+		Logger: a.log,
+		Client: a.httpClient,
+		URL:    seed.DownloadUrl,
+		RequestModFunc: func(builder *requests.Builder) *requests.Builder {
+			if seed.Authentication != nil && seed.Authentication.BearerAuth != "" {
+				builder = builder.Header("Authorization", seed.Authentication.BearerAuth)
+			}
+			return builder
+		},
+		DestinationDirectory: seed.DestinationDirectory,
+		PreserveArchive:      seed.ArchiveRelease,
+		NameOverride:         seed.NameOverride,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &InventoryRow{
+		Path: hlp.Ptr(resp.DownloadPath),
 	}, nil
 }
 
@@ -339,5 +369,24 @@ func (a *Agent) executeSeed_goInstall(ctx context.Context, seed *controllerv1.Se
 
 	return &InventoryRow{
 		Package: hlp.Ptr(install.Package),
+	}, nil
+}
+
+func (a *Agent) executeSeed_urlDownload(ctx context.Context, pbseed *controllerv1.Seed) (*InventoryRow, error) {
+	seed := pbseed.Element.(*controllerv1.Seed_UrlDownload).UrlDownload
+
+	resp, err := DownloadFromUrl(ctx, &DownloadRequest{
+		Logger: a.log,
+		Client: a.httpClient,
+		URL:    seed.DownloadUrl,
+		DestinationDirectory: seed.DestinationDirectory,
+		NameOverride:         seed.NameOverride,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &InventoryRow{
+		Path: hlp.Ptr(resp.DownloadPath),
 	}, nil
 }

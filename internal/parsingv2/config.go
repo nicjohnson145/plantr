@@ -102,6 +102,8 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 			seed, err = parseSeed_golang(concrete.Golang)
 		case *configv1.Seed_GoInstall:
 			seed, err = parseSeed_goInstall(concrete.GoInstall)
+		case *configv1.Seed_UrlDownload:
+			seed, err = parseSeed_urlDownload(concrete.UrlDownload)
 		default:
 			return nil, fmt.Errorf("unhandled seed type %T", concrete)
 		}
@@ -249,5 +251,47 @@ func parseSeed_goInstall(goinstall *configv1.GoInstall) (*Seed, error) {
 			Package: goinstall.Package,
 			Version: goinstall.Version,
 		},
+	}, nil
+}
+
+func parseSeed_urlDownload(urlDownload *configv1.UrlDownload) (*Seed, error) {
+	if err := protovalidate.Validate(urlDownload); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
+	}
+
+	element := &UrlDownload{
+		NameOverride: urlDownload.NameOverride,
+		Urls: map[string]map[string]string{},
+	}
+
+	setArchUrls := func(archGroup *configv1.UrlDownload_OsGroup_ArchGroup) map[string]string {
+		out := map[string]string{}
+		if archGroup.Amd64 != nil {
+			out["amd64"] = *archGroup.Amd64
+		}
+		if archGroup.Arm64 != nil {
+			out["arm64"] = *archGroup.Arm64
+		}
+
+		return out
+	}
+
+	if urlDownload.Urls.Linux != nil {
+		element.Urls["linux"] = setArchUrls(urlDownload.Urls.Linux)
+	}
+	if urlDownload.Urls.Mac != nil {
+		element.Urls["darwin"] = setArchUrls(urlDownload.Urls.Mac)
+	}
+
+	urlCount := 0
+	for _, archMap := range element.Urls {
+		urlCount += len(archMap)
+	}
+	if urlCount == 0 {
+		return nil, fmt.Errorf("must specify at least one OS/Arch url")
+	}
+
+	return &Seed{
+		Element: element,
 	}, nil
 }

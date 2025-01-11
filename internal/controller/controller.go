@@ -523,6 +523,16 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 					GoInstall: c.renderSeed_goInstall(concrete),
 				},
 			}
+		case *parsingv2.UrlDownload:
+			out, err := c.renderSeed_urlDownload(concrete, node)
+			if err != nil {
+				return nil, fmt.Errorf("error converting url_download: %w", err)
+			}
+			outSeeds[i] = &pbv1.Seed{
+				Element: &pbv1.Seed_UrlDownload{
+					UrlDownload: out,
+				},
+			}
 
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
@@ -608,4 +618,24 @@ func (c *Controller) renderSeed_goInstall(goinstall *parsingv2.GoInstall) *pbv1.
 		Package: goinstall.Package,
 		Version: goinstall.Version,
 	}
+}
+
+func (c *Controller) renderSeed_urlDownload(urlDownload *parsingv2.UrlDownload, node *parsingv2.Node) (*pbv1.UrlDownload, error) {
+	missingErr := errors.New(fmt.Sprintf("no url configured for %v/%v", node.OS, node.Arch))
+
+	archMap, ok := urlDownload.Urls[node.OS]
+	if !ok {
+		return nil, missingErr
+	}
+
+	url, ok := archMap[node.Arch]
+	if !ok {
+		return nil, missingErr
+	}
+
+	return &pbv1.UrlDownload{
+		NameOverride:         urlDownload.NameOverride,
+		DownloadUrl:          url,
+		DestinationDirectory: node.BinDir,
+	}, nil
 }

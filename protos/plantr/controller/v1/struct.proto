@@ -51,6 +51,12 @@ message GoInstall {
   optional string version = 2;
 }
 
+message UrlDownload {
+  string download_url = 1;
+  string destination_directory = 2;
+  optional string name_override = 3;
+}
+
 message Seed {
   message Metadata {
     string hash = 1;
@@ -64,5 +70,6 @@ message Seed {
     GitRepo git_repo = 5;
     Golang golang = 6;
     GoInstall go_install = 7;
+    UrlDownload url_download = 8;
   }
 }

@@ -94,6 +94,21 @@ message GoInstall {
   optional string version = 2;
 }
 
+message UrlDownload {
+  message OsGroup {
+    message ArchGroup {
+      optional string amd64 = 1;
+      optional string arm64 = 2;
+    }
+
+    ArchGroup linux = 1;
+    ArchGroup mac = 2;
+  }
+
+  OsGroup urls = 1;
+  optional string name_override = 2;
+}
+
 message Seed {
   oneof element {
     option (buf.validate.oneof).required = true;
@@ -103,6 +118,7 @@ message Seed {
     GitRepo git_repo = 4;
     Golang golang = 5;
     GoInstall go_install = 6;
+    UrlDownload url_download = 7;
   }
 }
 
