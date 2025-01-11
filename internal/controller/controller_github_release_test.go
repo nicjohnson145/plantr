@@ -137,7 +137,7 @@ func TestGithubRelease_AssetUrlCaching(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		require.Equal(t, downloadURL, release.DownloadUrl)
+		require.Equal(t, downloadURL, release.GetGithubRelease().DownloadUrl)
 	})
 
 	t.Run("cache miss", func(t *testing.T) {
@@ -204,6 +204,6 @@ func TestGithubRelease_AssetUrlCaching(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		require.Equal(t, downloadURL, release.DownloadUrl)
+		require.Equal(t, downloadURL, release.GetGithubRelease().DownloadUrl)
 	})
 }

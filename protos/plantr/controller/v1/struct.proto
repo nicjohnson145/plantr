@@ -60,6 +60,7 @@ message UrlDownload {
 message Seed {
   message Metadata {
     string hash = 1;
+    string display_name = 2;
   }
 
   Metadata metadata = 1;

@@ -28,7 +28,7 @@ type githubAsset struct {
 	DownloadUrl string `json:"browser_download_url"`
 }
 
-func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.GithubRelease, error) {
+func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.Seed, error) {
 	c.log.Debug().Msgf("rendering github release %v/%v", release.Repo, release.Tag)
 
 	c.log.Debug().Msg("reading asset cache")
@@ -93,7 +93,14 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		}
 	}
 
-	return outRelease, nil
+	return &pbv1.Seed{
+		Metadata: &pbv1.Seed_Metadata{
+			DisplayName: release.Repo,
+		},
+		Element: &pbv1.Seed_GithubRelease{
+			GithubRelease: outRelease,
+		},
+	}, nil
 }
 
 var (

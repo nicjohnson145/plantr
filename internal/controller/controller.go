@@ -472,82 +472,54 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 	for i, seed := range seeds {
 		switch concrete := seed.Element.(type) {
 		case *parsingv2.ConfigFile:
-			out, err := c.renderSeed_configFile(concrete, node, vaultData)
+			s, err := c.renderSeed_configFile(concrete, node, vaultData)
 			if err != nil {
 				return nil, fmt.Errorf("error converting config file: %w", err)
 			}
-			outSeeds[i] = &pbv1.Seed{
-				Element: &pbv1.Seed_ConfigFile{
-					ConfigFile: out,
-				},
-			}
+			outSeeds[i] = s
 		case *parsingv2.GithubRelease:
-			out, err := c.renderSeed_githubRelease(ctx, concrete, node)
+			s, err := c.renderSeed_githubRelease(ctx, concrete, node)
 			if err != nil {
 				return nil, fmt.Errorf("error converting github release: %w", err)
 			}
-			outSeeds[i] = &pbv1.Seed{
-				Element: &pbv1.Seed_GithubRelease{
-					GithubRelease: out,
-				},
-			}
+			outSeeds[i] = s 
 		case *parsingv2.SystemPackage:
-			out, err := c.renderSeed_systemPackage(concrete, node)
+			s, err := c.renderSeed_systemPackage(concrete, node)
 			if err != nil {
 				return nil, fmt.Errorf("error converting system package: %w", err)
 			}
-			outSeeds[i] = &pbv1.Seed{
-				Element: &pbv1.Seed_SystemPackage{
-					SystemPackage: out,
-				},
-			}
+			outSeeds[i] = s
 		case *parsingv2.GitRepo:
-			out, err := c.renderSeed_gitRepo(concrete, node)
+			s, err := c.renderSeed_gitRepo(concrete, node)
 			if err != nil {
 				return nil, fmt.Errorf("error converting git repo: %w", err)
 			}
-			outSeeds[i] = &pbv1.Seed{
-				Element: &pbv1.Seed_GitRepo{
-					GitRepo: out,
-				},
-			}
+			outSeeds[i] = s
 		case *parsingv2.Golang:
-			outSeeds[i] = &pbv1.Seed{
-				Element: &pbv1.Seed_Golang{
-					Golang: c.renderSeed_golang(concrete),
-				},
-			}
+			outSeeds[i] = c.renderSeed_golang(concrete)
 		case *parsingv2.GoInstall:
-			outSeeds[i] = &pbv1.Seed{
-				Element: &pbv1.Seed_GoInstall{
-					GoInstall: c.renderSeed_goInstall(concrete),
-				},
-			}
+			outSeeds[i] = c.renderSeed_goInstall(concrete)
 		case *parsingv2.UrlDownload:
-			out, err := c.renderSeed_urlDownload(concrete, node)
+			s, err := c.renderSeed_urlDownload(concrete, node)
 			if err != nil {
 				return nil, fmt.Errorf("error converting url_download: %w", err)
 			}
-			outSeeds[i] = &pbv1.Seed{
-				Element: &pbv1.Seed_UrlDownload{
-					UrlDownload: out,
-				},
-			}
-
+			outSeeds[i] = s
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
 		}
 
-		// Set general metadata about the seed
-		outSeeds[i].Metadata = &pbv1.Seed_Metadata{
-			Hash: seed.Hash,
+		// Set hash here so we dont have to pass it through all over
+		if outSeeds[i].Metadata == nil {
+			outSeeds[i].Metadata = &pbv1.Seed_Metadata{}
 		}
+		outSeeds[i].Metadata.Hash = seed.Hash
 	}
 
 	return outSeeds, nil
 }
 
-func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *parsingv2.Node, vaultData map[string]any) (*pbv1.ConfigFile, error) {
+func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *parsingv2.Node, vaultData map[string]any) (*pbv1.Seed, error) {
 	t, err := template.New("").Parse(file.TemplateContent)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template: %w", err)
@@ -563,15 +535,24 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *par
 		return nil, fmt.Errorf("error rendering template: %w", err)
 	}
 
-	return &pbv1.ConfigFile{
-		Content:     buf.String(),
-		Destination: strings.ReplaceAll(file.Destination, "~", node.UserHome),
+	dest := strings.ReplaceAll(file.Destination, "~", node.UserHome)
+	return &pbv1.Seed{
+		Metadata: &pbv1.Seed_Metadata{
+			DisplayName: dest,
+		},
+		Element: &pbv1.Seed_ConfigFile{
+			ConfigFile: &pbv1.ConfigFile{
+				Content:     buf.String(),
+				Destination: dest,
+			},
+		},
 	}, nil
 }
 
-func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node *parsingv2.Node) (*pbv1.SystemPackage, error) {
+func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node *parsingv2.Node) (*pbv1.Seed, error) {
 	outPkg := &pbv1.SystemPackage{}
 
+	var display string
 	switch node.PackageManager {
 	case "apt":
 		if pkg.Apt == nil {
@@ -582,14 +563,22 @@ func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node
 				Name: pkg.Apt.Name,
 			},
 		}
+		display = pkg.Apt.Name
 	default:
 		return nil, fmt.Errorf("unhandled package manager %v", node.PackageManager)
 	}
 
-	return outPkg, nil
+	return &pbv1.Seed{
+		Metadata: &pbv1.Seed_Metadata{
+			DisplayName: display,
+		},
+		Element: &pbv1.Seed_SystemPackage{
+			SystemPackage: outPkg,
+		},
+	}, nil
 }
 
-func (c *Controller) renderSeed_gitRepo(repo *parsingv2.GitRepo, node *parsingv2.Node) (*pbv1.GitRepo, error) {
+func (c *Controller) renderSeed_gitRepo(repo *parsingv2.GitRepo, node *parsingv2.Node) (*pbv1.Seed, error) {
 	outRepo := &pbv1.GitRepo{
 		Url:      repo.URL,
 		Location: strings.ReplaceAll(repo.Location, "~", node.UserHome),
@@ -604,23 +593,44 @@ func (c *Controller) renderSeed_gitRepo(repo *parsingv2.GitRepo, node *parsingv2
 		return nil, fmt.Errorf("unable to determine output ref")
 	}
 
-	return outRepo, nil
+	return &pbv1.Seed{
+		Metadata: &pbv1.Seed_Metadata{
+			DisplayName: repo.URL,
+		},
+		Element: &pbv1.Seed_GitRepo{
+			GitRepo: outRepo,
+		},
+	}, nil
 }
 
-func (c *Controller) renderSeed_golang(golang *parsingv2.Golang) *pbv1.Golang {
-	return &pbv1.Golang{
-		Version: golang.Version,
+func (c *Controller) renderSeed_golang(golang *parsingv2.Golang) *pbv1.Seed {
+	return &pbv1.Seed{
+		Metadata: &pbv1.Seed_Metadata{
+			DisplayName: fmt.Sprintf("go@%v", golang.Version),
+		},
+		Element: &pbv1.Seed_Golang{
+			Golang: &pbv1.Golang{
+				Version: golang.Version,
+			},
+		},
 	}
 }
 
-func (c *Controller) renderSeed_goInstall(goinstall *parsingv2.GoInstall) *pbv1.GoInstall {
-	return &pbv1.GoInstall{
-		Package: goinstall.Package,
-		Version: goinstall.Version,
+func (c *Controller) renderSeed_goInstall(goinstall *parsingv2.GoInstall) *pbv1.Seed {
+	return &pbv1.Seed{
+		Metadata: &pbv1.Seed_Metadata{
+			DisplayName: goinstall.Package,
+		},
+		Element: &pbv1.Seed_GoInstall{
+			GoInstall: &pbv1.GoInstall{
+				Package: goinstall.Package,
+				Version: goinstall.Version,
+			},
+		},
 	}
 }
 
-func (c *Controller) renderSeed_urlDownload(urlDownload *parsingv2.UrlDownload, node *parsingv2.Node) (*pbv1.UrlDownload, error) {
+func (c *Controller) renderSeed_urlDownload(urlDownload *parsingv2.UrlDownload, node *parsingv2.Node) (*pbv1.Seed, error) {
 	missingErr := errors.New(fmt.Sprintf("no url configured for %v/%v", node.OS, node.Arch))
 
 	archMap, ok := urlDownload.Urls[node.OS]
@@ -633,9 +643,16 @@ func (c *Controller) renderSeed_urlDownload(urlDownload *parsingv2.UrlDownload, 
 		return nil, missingErr
 	}
 
-	return &pbv1.UrlDownload{
-		NameOverride:         urlDownload.NameOverride,
-		DownloadUrl:          url,
-		DestinationDirectory: node.BinDir,
+	return &pbv1.Seed{
+		Metadata: &pbv1.Seed_Metadata{
+			DisplayName: url,
+		},
+		Element: &pbv1.Seed_UrlDownload{
+			UrlDownload: &pbv1.UrlDownload{
+				NameOverride:         urlDownload.NameOverride,
+				DownloadUrl:          url,
+				DestinationDirectory: node.BinDir,
+			},
+		},
 	}, nil
 }

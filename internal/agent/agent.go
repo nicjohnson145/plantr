@@ -165,34 +165,31 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 	for _, seed := range seeds {
 		var executeFunc func(context.Context, *controllerv1.Seed) (*InventoryRow, error)
 		var skipInventoryFunc func(*controllerv1.Seed) bool
-		// TODO: generate this server-side & pack it into metadata
 		var msg string
 
 		switch concrete := seed.Element.(type) {
 		case *controllerv1.Seed_ConfigFile:
-			msg = fmt.Sprintf("rendering config file %v", concrete.ConfigFile.Destination)
+			msg = fmt.Sprintf("rendering config file %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_configFile
 			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_GithubRelease:
-			// TODO: pass through the repo name for logging purposes
-			msg = fmt.Sprintf("downloading github_release %v", concrete.GithubRelease.DownloadUrl)
+			msg = fmt.Sprintf("downloading github_release %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_githubRelease
 			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_SystemPackage:
-			// TODO: clever way to get the name?
-			msg = "installing system_package"
+			msg = fmt.Sprintf("installing system_package %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_systemPackage
 			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_GitRepo:
-			msg = fmt.Sprintf("cloning git_repo %v", concrete.GitRepo.Url)
+			msg = fmt.Sprintf("cloning git_repo %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_gitRepo
 			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_Golang:
-			msg = fmt.Sprintf("install go@%v", concrete.Golang.Version)
+			msg = fmt.Sprintf("installing %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_golang
 			skipInventoryFunc = noopSkip
 		case *controllerv1.Seed_GoInstall:
-			msg = fmt.Sprintf("installing go binary %v", concrete.GoInstall.Package)
+			msg = fmt.Sprintf("installing go binary %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_goInstall
 			// If we're not specifying a version, that means "latest", so dont check inventory to guarantee that we try
 			// it again
@@ -200,7 +197,7 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 				return s.GetGoInstall().Version == nil
 			}
 		case *controllerv1.Seed_UrlDownload:
-			msg = fmt.Sprintf("downloading %v", concrete.UrlDownload.DownloadUrl)
+			msg = fmt.Sprintf("downloading %v", seed.Metadata.DisplayName)
 			executeFunc = a.executeSeed_urlDownload
 			skipInventoryFunc = noopSkip
 		default:
