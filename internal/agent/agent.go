@@ -165,6 +165,7 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 	for _, seed := range seeds {
 		var executeFunc func(context.Context, *controllerv1.Seed) (*InventoryRow, error)
 		var skipInventoryFunc func(*controllerv1.Seed) bool
+		// TODO: generate this server-side & pack it into metadata
 		var msg string
 
 		switch concrete := seed.Element.(type) {
