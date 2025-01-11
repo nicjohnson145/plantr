@@ -19,6 +19,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/golang-jwt/jwt"
+	"github.com/nicjohnson145/hlp"
 	"github.com/nicjohnson145/hlp/hashset"
 	hsqlx "github.com/nicjohnson145/hlp/sqlx"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
@@ -482,7 +483,7 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 			if err != nil {
 				return nil, fmt.Errorf("error converting github release: %w", err)
 			}
-			outSeeds[i] = s 
+			outSeeds[i] = s
 		case *parsingv2.SystemPackage:
 			s, err := c.renderSeed_systemPackage(concrete, node)
 			if err != nil {
@@ -520,13 +521,30 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 }
 
 func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *parsingv2.Node, vaultData map[string]any) (*pbv1.Seed, error) {
-	t, err := template.New("").Parse(file.TemplateContent)
+	functions := template.FuncMap{
+		"HasRole": func(roleName string) bool {
+			return hlp.First(node.Roles, func(x string) bool {
+				return x == roleName
+			}) != -1
+		},
+		"NodeIsOneOf": func(ids ...string) bool {
+			return hlp.First(ids, func(x string) bool {
+				return x == node.ID
+			}) != -1
+		},
+	}
+
+	t, err := template.New("").Funcs(functions).Parse(file.TemplateContent)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing template: %w", err)
 	}
 
 	data := map[string]any{
 		"Vault": vaultData,
+		"Vars": map[string]any{
+			"Home":         node.UserHome,
+			"BinDirectory": node.BinDir,
+		},
 	}
 
 	buf := &bytes.Buffer{}
