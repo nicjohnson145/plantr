@@ -574,7 +574,7 @@ func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node
 	switch node.PackageManager {
 	case "apt":
 		if pkg.Apt == nil {
-			return nil, fmt.Errorf("node has configured package manager 'apt', but no apt apt package configured")
+			return nil, fmt.Errorf("node has configured package manager 'apt', but no apt package configured")
 		}
 		outPkg.Pkg = &pbv1.SystemPackage_Apt{
 			Apt: &pbv1.SystemPackage_AptPkg{
@@ -582,6 +582,15 @@ func (c *Controller) renderSeed_systemPackage(pkg *parsingv2.SystemPackage, node
 			},
 		}
 		display = pkg.Apt.Name
+	case "brew":
+		if pkg.Brew == nil {
+			return nil, fmt.Errorf("node has configured package manager 'brew' not no brew package configured")
+		}
+		outPkg.Pkg = &pbv1.SystemPackage_Brew{
+			Brew: &pbv1.SystemPackage_BrewPkg{
+				Name: pkg.Apt.Name,
+			},
+		}
 	default:
 		return nil, fmt.Errorf("unhandled package manager %v", node.PackageManager)
 	}

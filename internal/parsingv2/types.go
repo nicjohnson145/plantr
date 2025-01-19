@@ -49,8 +49,13 @@ type SystemPackageApt struct {
 	Name string
 }
 
+type SystemPackageBrew struct {
+	Name string
+}
+
 type SystemPackage struct {
-	Apt *SystemPackageApt
+	Apt  *SystemPackageApt
+	Brew *SystemPackageBrew
 }
 
 type GitRepo struct {
@@ -71,5 +76,5 @@ type GoInstall struct {
 
 type UrlDownload struct {
 	NameOverride *string
-	Urls map[string]map[string]string
+	Urls         map[string]map[string]string
 }

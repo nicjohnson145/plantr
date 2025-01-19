@@ -285,8 +285,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, pbseed *controlle
 
 	resp, err := DownloadFromUrl(ctx, &DownloadRequest{
 		Logger: a.log,
-		Client: a.httpClient,
-		URL:    seed.DownloadUrl,
+		Client: a.httpClient, URL:    seed.DownloadUrl,
 		RequestModFunc: func(builder *requests.Builder) *requests.Builder {
 			if seed.Authentication != nil && seed.Authentication.BearerAuth != "" {
 				builder = builder.Header("Authorization", seed.Authentication.BearerAuth)
@@ -312,14 +311,28 @@ func (a *Agent) executeSeed_systemPackage(ctx context.Context, pbseed *controlle
 	switch concrete := seed.Pkg.(type) {
 	case *controllerv1.SystemPackage_Apt:
 		return a.executeSeed_systemPackage_apt(ctx, concrete.Apt)
+	case *controllerv1.SystemPackage_Brew:
+		return a.executeSeed_systemPackage_brew(ctx, concrete.Brew)
 	default:
 		return nil, fmt.Errorf("unhandled system package type of %T", concrete)
 	}
 }
 
 func (a *Agent) executeSeed_systemPackage_apt(_ context.Context, pkg *controllerv1.SystemPackage_AptPkg) (*InventoryRow, error) {
-	// TODO: proper version support & `apt update` cached for the whole run
+	// TODO: proper version support
 	_, stderr, err := ExecuteOSCommand("/bin/sh", "-c", fmt.Sprintf("sudo DEBIAN_FRONTEND=noninteractive apt install -y %v", pkg.Name))
+	if err != nil {
+		return nil, fmt.Errorf("error during installation: %v\n%v", err, stderr)
+	}
+
+	return &InventoryRow{
+		Package: hlp.Ptr(pkg.Name),
+	}, nil
+}
+
+func (a *Agent) executeSeed_systemPackage_brew(_ context.Context, pkg *controllerv1.SystemPackage_BrewPkg) (*InventoryRow, error) {
+	// TODO: proper version support & `brew update` cached for the whole run
+	_, stderr, err := ExecuteOSCommand("brew", "install", pkg.Name)
 	if err != nil {
 		return nil, fmt.Errorf("error during installation: %v\n%v", err, stderr)
 	}
@@ -353,6 +366,11 @@ func (a *Agent) getSystemPackageUpdateFunc(seeds []*controllerv1.Seed) (func() e
 			if err != nil {
 				return fmt.Errorf("error during update: %v\n%v", err, stderr)
 			}
+			return nil
+		}, nil
+	case *controllerv1.SystemPackage_Brew:
+		return func() error {
+			a.log.Warn().Msg("brew pre-update function not implemented yet")
 			return nil
 		}, nil
 	default:

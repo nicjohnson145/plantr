@@ -149,6 +149,20 @@ func TestNode(t *testing.T) {
 			},
 			err: `arch is required to be one of ["amd64", "arm64"]`,
 		},
+		{
+			name: "no package manager",
+			modFunc: func(x *configv1.Node) {
+				x.PackageManager = ""
+			},
+			err: `package_manager is required to be one of ["apt", "brew"]`,
+		},
+		{
+			name: "wrong package manager",
+			modFunc: func(x *configv1.Node) {
+				x.PackageManager = "fake-guy"
+			},
+			err: `package_manager is required to be one of ["apt", "brew"]`,
+		},
 	}
 	for _, tc := range testData {
 		t.Run(tc.name, func(t *testing.T) {
@@ -238,6 +252,9 @@ func TestSystemPackage(t *testing.T) {
 			Apt: &configv1.SystemPackage_Apt{
 				Name: "some-apt-package",
 			},
+			Brew: &configv1.SystemPackage_Brew{
+				Name: "some-brew-package",
+			},
 		}
 	}
 
@@ -262,8 +279,16 @@ func TestSystemPackage(t *testing.T) {
 			name: "no top level keys",
 			modFunc: func(x *configv1.SystemPackage) {
 				x.Apt = nil
+				x.Brew = nil 
 			},
-			err: "at least one of ['apt'] is required",
+			err: "at least one of ['apt', 'brew'] is required",
+		},
+		{
+			name: "no brew name",
+			modFunc: func(x *configv1.SystemPackage) {
+				x.Brew.Name = ""
+			},
+			err: "name is a required field",
 		},
 	}
 	for _, tc := range testData {

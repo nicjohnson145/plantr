@@ -30,3 +30,17 @@ services:
     - ./hack/test-repo-keypairs:/opt/keypairs
     ports:
     - 9090:8080
+
+  agent-brew:
+    build:
+      context: .
+      dockerfile: functional-test-agent.Dockerfile
+    environment:
+      CONTROLLER_ADDRESS: "http://controller:8080"
+      POLL_INTERVAL: "0s"
+      NODE_ID: 01JHZZ36D8MXQJRXNA4ERJK6SK
+      PRIVATE_KEY_PATH: "/opt/keypairs/test-repo-brew-key"
+    volumes:
+    - ./hack/test-repo-keypairs:/opt/keypairs
+    ports:
+    - 9091:8080

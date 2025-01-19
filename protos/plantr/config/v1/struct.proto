@@ -50,12 +50,21 @@ message SystemPackage {
       expression: "size(this) > 0"
     }];
   }
+  message Brew {
+    string name = 1[(buf.validate.field).cel = {
+      id: "SystemPackage.Brew.name",
+      message: "name is a required field",
+      expression: "size(this) > 0"
+    }];
+  }
+
   Apt apt = 1;
+  Brew brew = 2;
 
   option (buf.validate.message).cel = {
     id: "SystemPackage",
-    message: "at least one of ['apt'] is required",
-    expression: "has(this.apt)"
+    message: "at least one of ['apt', 'brew'] is required",
+    expression: "has(this.apt) || has(this.brew)"
   };
 }
 
@@ -157,8 +166,8 @@ message Node {
   }];
   string package_manager = 9 [(buf.validate.field).cel = {
     id: "Node.package_manager",
-    message: 'package_manager is required to be one of ["apt"]',
-    expression: "this in ['apt']"
+    message: 'package_manager is required to be one of ["apt", "brew"]',
+    expression: "this in ['apt', 'brew']"
   }];
 }
 

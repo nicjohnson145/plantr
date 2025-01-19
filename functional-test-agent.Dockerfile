@@ -18,7 +18,7 @@ COPY . .
 RUN task build-agent
 
 FROM ubuntu:24.04
-RUN apt update && apt install -y ca-certificates sudo git
+RUN apt update && apt install -y ca-certificates sudo git curl build-essential
 RUN useradd -ms /bin/bash newuser
 RUN groupadd passwordless
 RUN usermod -a -G passwordless newuser
@@ -29,4 +29,7 @@ RUN chmod +x /home/newuser/test.sh
 USER newuser
 COPY --from=builder /src/plantr-agent /bin/plantr-agent
 ENV PATH="/usr/local/go/bin:$PATH"
+# Install homebrew (duurrr script from the internet but :shrug:)
+ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH"
+RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ENTRYPOINT ["/bin/plantr-agent"]

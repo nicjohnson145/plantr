@@ -28,8 +28,12 @@ message SystemPackage {
   message AptPkg {
     string name = 1;
   }
+  message BrewPkg {
+    string name = 1;
+  }
   oneof pkg {
     AptPkg apt = 1;
+    BrewPkg brew = 2;
   }
 }
 

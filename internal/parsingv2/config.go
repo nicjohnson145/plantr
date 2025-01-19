@@ -200,6 +200,11 @@ func parseSeed_systemPackage(pkg *configv1.SystemPackage) (*Seed, error) {
 			Name: pkg.Apt.Name,
 		}
 	}
+	if pkg.Brew != nil {
+		outPkg.Brew = &SystemPackageBrew{
+			Name: pkg.Brew.Name,
+		}
+	}
 
 	return &Seed{
 		Element: outPkg,
@@ -261,7 +266,7 @@ func parseSeed_urlDownload(urlDownload *configv1.UrlDownload) (*Seed, error) {
 
 	element := &UrlDownload{
 		NameOverride: urlDownload.NameOverride,
-		Urls: map[string]map[string]string{},
+		Urls:         map[string]map[string]string{},
 	}
 
 	setArchUrls := func(archGroup *configv1.UrlDownload_OsGroup_ArchGroup) map[string]string {
