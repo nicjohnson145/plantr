@@ -658,7 +658,7 @@ func (c *Controller) renderSeed_goInstall(goinstall *parsingv2.GoInstall) *pbv1.
 }
 
 func (c *Controller) renderSeed_urlDownload(urlDownload *parsingv2.UrlDownload, node *parsingv2.Node) (*pbv1.Seed, error) {
-	missingErr := errors.New(fmt.Sprintf("no url configured for %v/%v", node.OS, node.Arch))
+	missingErr := fmt.Errorf("no url configured for %v/%v", node.OS, node.Arch)
 
 	archMap, ok := urlDownload.Urls[node.OS]
 	if !ok {
