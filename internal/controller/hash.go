@@ -48,6 +48,13 @@ func seedHash(x *parsingv2.Seed) string {
 				concrete.Apt.Name,
 			)
 		}
+		if concrete.Brew != nil {
+			parts = append(
+				parts,
+				"BREW",
+				concrete.Brew.Name,
+			)
+		}
 	case *parsingv2.Golang:
 		parts = []string{
 			"Golang",
