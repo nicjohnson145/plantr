@@ -110,6 +110,15 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error parsing item %v: %w", i, err)
 		}
+
+		var meta *SeedMetadata
+		if s.Meta != nil {
+			meta = &SeedMetadata{
+				Name: s.Meta.Name,
+			}
+		}
+		seed.Metadata = meta
+
 		outSeeds[i] = seed
 	}
 

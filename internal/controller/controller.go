@@ -21,6 +21,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/nicjohnson145/hlp"
 	"github.com/nicjohnson145/hlp/hashset"
+	"github.com/nicjohnson145/hlp/set"
 	hsqlx "github.com/nicjohnson145/hlp/sqlx"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/encryption"
@@ -469,11 +470,18 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 		return nil, fmt.Errorf("error cloning vault data: %w", err)
 	}
 
+	namedSeeds := set.New(hlp.FilterMap(seeds, func(seed *parsingv2.Seed, _ int) (string, bool) {
+		if seed.Metadata != nil && seed.Metadata.Name != nil {
+			return *seed.Metadata.Name, true
+		}
+		return "", false
+	})...)
+
 	outSeeds := make([]*pbv1.Seed, len(seeds))
 	for i, seed := range seeds {
 		switch concrete := seed.Element.(type) {
 		case *parsingv2.ConfigFile:
-			s, err := c.renderSeed_configFile(concrete, node, vaultData)
+			s, err := c.renderSeed_configFile(concrete, node, vaultData, namedSeeds)
 			if err != nil {
 				return nil, fmt.Errorf("error converting config file: %w", err)
 			}
@@ -520,7 +528,7 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 	return outSeeds, nil
 }
 
-func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *parsingv2.Node, vaultData map[string]any) (*pbv1.Seed, error) {
+func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *parsingv2.Node, vaultData map[string]any, namedSeeds *set.Set[string]) (*pbv1.Seed, error) {
 	functions := template.FuncMap{
 		"HasRole": func(roleName string) bool {
 			return hlp.First(node.Roles, func(x string) bool {
@@ -531,6 +539,9 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *par
 			return hlp.First(ids, func(x string) bool {
 				return x == node.ID
 			}) != -1
+		},
+		"HasSeed": func(seedName string) bool {
+			return namedSeeds.Contains(seedName)
 		},
 	}
 

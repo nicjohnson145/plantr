@@ -14,9 +14,14 @@ type Node struct {
 	PackageManager string
 }
 
+type SeedMetadata struct {
+	Name *string
+}
+
 type Seed struct {
-	Hash    string
-	Element any
+	Metadata *SeedMetadata
+	Hash     string
+	Element  any
 }
 
 type Config struct {
