@@ -51,7 +51,7 @@ func parseFS(fsys fs.FS) (*Config, error) {
 	}
 
 	for rolename, role := range pbConfig.Roles {
-		seeds, err := parseRole(fsys, role.Seeds)
+		seeds, err := parseRole(pbConfig, fsys, role.Seeds)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing role %v: %w", rolename, err)
 		}
@@ -84,11 +84,12 @@ func parseNode(node *configv1.Node) (*Node, error) {
 	}, nil
 }
 
-func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
-	outSeeds := make([]*Seed, len(seeds))
+func parseRole(rootConfig *configv1.Config, fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
+	outSeeds := []*Seed{}
 	for i, s := range seeds {
 		var seed *Seed
 		var err error
+		var seeds []*Seed
 		switch concrete := s.Element.(type) {
 		case *configv1.Seed_ConfigFile:
 			seed, err = parseSeed_configFile(fsys, concrete.ConfigFile)
@@ -104,6 +105,8 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 			seed, err = parseSeed_goInstall(concrete.GoInstall)
 		case *configv1.Seed_UrlDownload:
 			seed, err = parseSeed_urlDownload(concrete.UrlDownload)
+		case *configv1.Seed_RoleGroup:
+			seeds, err = parseSeed_roleGroup(rootConfig, fsys, concrete.RoleGroup)
 		default:
 			return nil, fmt.Errorf("unhandled seed type %T", concrete)
 		}
@@ -111,15 +114,20 @@ func parseRole(fsys fs.FS, seeds []*configv1.Seed) ([]*Seed, error) {
 			return nil, fmt.Errorf("error parsing item %v: %w", i, err)
 		}
 
-		var meta *SeedMetadata
-		if s.Meta != nil {
-			meta = &SeedMetadata{
-				Name: s.Meta.Name,
+		if seed != nil {
+			var meta *SeedMetadata
+			if s.Meta != nil {
+				meta = &SeedMetadata{
+					Name: s.Meta.Name,
+				}
 			}
-		}
-		seed.Metadata = meta
+			seed.Metadata = meta
 
-		outSeeds[i] = seed
+			outSeeds = append(outSeeds, seed)
+		}
+		if seeds != nil {
+			outSeeds = append(outSeeds, seeds...)
+		}
 	}
 
 	return outSeeds, nil
@@ -308,4 +316,28 @@ func parseSeed_urlDownload(urlDownload *configv1.UrlDownload) (*Seed, error) {
 	return &Seed{
 		Element: element,
 	}, nil
+}
+
+func parseSeed_roleGroup(rootConfig *configv1.Config, fsys fs.FS, roleGroup *configv1.RoleGroup) ([]*Seed, error) {
+	if err := protovalidate.Validate(roleGroup); err != nil {
+		return nil, fmt.Errorf("error validating: %w", err)
+	}
+
+	seeds := []*Seed{}
+
+	for _, roleName := range roleGroup.Roles {
+		roleObj, ok := rootConfig.Roles[roleName]
+		if !ok {
+			return nil, fmt.Errorf("referenced role %v not found", roleName)
+		}
+
+		roleSeeds, err := parseRole(rootConfig, fsys, roleObj.Seeds)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing sub role %v: %w", roleName, err)
+		}
+
+		seeds = append(seeds, roleSeeds...)
+	}
+
+	return seeds, nil
 }

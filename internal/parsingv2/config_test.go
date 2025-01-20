@@ -19,6 +19,12 @@ func TestParseFS(t *testing.T) {
 		_, err := ParseFS(os.DirFS("./testdata/basic"))
 		require.NoError(t, err)
 	})
+
+	t.Run("sub-roles", func(t *testing.T) {
+		t.Parallel()
+		_, err := ParseFS(os.DirFS("./testdata/sub-role"))
+		require.NoError(t, err)
+	})
 }
 
 func TestConfigFile(t *testing.T) {
@@ -279,7 +285,7 @@ func TestSystemPackage(t *testing.T) {
 			name: "no top level keys",
 			modFunc: func(x *configv1.SystemPackage) {
 				x.Apt = nil
-				x.Brew = nil 
+				x.Brew = nil
 			},
 			err: "at least one of ['apt', 'brew'] is required",
 		},
@@ -413,7 +419,7 @@ func TestGolang(t *testing.T) {
 			validObj := valid()
 			tc.modFunc(validObj)
 
-			_, err := parseRole(nil, []*configv1.Seed{{
+			_, err := parseRole(nil, nil, []*configv1.Seed{{
 				Element: &configv1.Seed_Golang{
 					Golang: validObj,
 				},
@@ -468,7 +474,7 @@ func TestGoInstall(t *testing.T) {
 			validObj := valid()
 			tc.modFunc(validObj)
 
-			_, err := parseRole(nil, []*configv1.Seed{{
+			_, err := parseRole(nil, nil, []*configv1.Seed{{
 				Element: &configv1.Seed_GoInstall{
 					GoInstall: validObj,
 				},
@@ -509,19 +515,19 @@ func TestUrlDownload(t *testing.T) {
 			err:     "",
 		},
 		{
-			name:    "valid single url",
+			name: "valid single url",
 			modFunc: func(x *configv1.UrlDownload) {
 				x.Urls.Mac = nil
 			},
-			err:     "",
+			err: "",
 		},
 		{
-			name:    "no urls",
+			name: "no urls",
 			modFunc: func(x *configv1.UrlDownload) {
 				x.Urls.Mac = nil
 				x.Urls.Linux = nil
 			},
-			err:     "must specify at least one OS/Arch url",
+			err: "must specify at least one OS/Arch url",
 		},
 	}
 	for _, tc := range testData {
@@ -531,11 +537,98 @@ func TestUrlDownload(t *testing.T) {
 			validObj := valid()
 			tc.modFunc(validObj)
 
-			_, err := parseRole(nil, []*configv1.Seed{{
+			_, err := parseRole(nil, nil, []*configv1.Seed{{
 				Element: &configv1.Seed_UrlDownload{
 					UrlDownload: validObj,
 				},
 			}})
+			if tc.err == "" {
+				require.NoError(t, err)
+			} else {
+				require.ErrorContains(t, err, tc.err)
+			}
+		})
+	}
+}
+
+func TestRoleGroup(t *testing.T) {
+	t.Parallel()
+
+	valid := func() *configv1.RoleGroup {
+		return &configv1.RoleGroup{
+			Roles: []string{"alpha", "bravo"},
+		}
+	}
+
+	testData := []struct {
+		name    string
+		modFunc func(x *configv1.RoleGroup)
+		err     string
+	}{
+		{
+			name:    "valid",
+			modFunc: func(x *configv1.RoleGroup) {},
+			err:     "",
+		},
+		{
+			name:    "no roles",
+			modFunc: func(x *configv1.RoleGroup) {
+				x.Roles = nil
+			},
+			err:     "at least one role is required",
+		},
+		{
+			name:    "invalid role name",
+			modFunc: func(x *configv1.RoleGroup) {
+				x.Roles = []string{"not-a-role"}
+			},
+			err:     "referenced role not-a-role not found",
+		},
+	}
+	for _, tc := range testData {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			validObj := valid()
+			tc.modFunc(validObj)
+
+			root := &configv1.Config{
+				Roles: map[string]*configv1.Role{
+					"alpha": {
+						Seeds: []*configv1.Seed{
+							{
+								Element: &configv1.Seed_GoInstall{
+									GoInstall: &configv1.GoInstall{
+										Package: "alpha-package",
+									},
+								},
+							},
+						},
+					},
+					"bravo": {
+						Seeds: []*configv1.Seed{
+							{
+								Element: &configv1.Seed_GoInstall{
+									GoInstall: &configv1.GoInstall{
+										Package: "bravo-package",
+									},
+								},
+							},
+						},
+					},
+					"charlie": {
+						Seeds: []*configv1.Seed{
+							{
+								Element: &configv1.Seed_RoleGroup{
+									RoleGroup: validObj,
+								},
+							},
+						},
+					},
+				},
+			}
+
+			_, err := parseRole(root, nil, root.Roles["charlie"].Seeds)
 			if tc.err == "" {
 				require.NoError(t, err)
 			} else {
