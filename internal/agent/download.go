@@ -20,6 +20,7 @@ var (
 	archiveExtensions = set.New(
 		".gz",
 		".zip",
+		".xz",
 	)
 )
 
