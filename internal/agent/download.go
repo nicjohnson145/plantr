@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/carlmjohnson/requests"
@@ -32,6 +33,7 @@ type DownloadRequest struct {
 	DestinationDirectory string
 	PreserveArchive      bool
 	NameOverride         *string
+	BinaryRegex          *string
 }
 
 type DownloadResponse struct {
@@ -152,6 +154,20 @@ func DownloadFromUrl(ctx context.Context, req *DownloadRequest) (*DownloadRespon
 			DownloadPath: targetPath,
 		}, nil
 	} else if isArchive { // we should extract a single binary from the archive
+		binaryRegexFunc := func(path string) bool {
+			return true
+		}
+		if req.BinaryRegex != nil {
+			userRegex, err := regexp.Compile(*req.BinaryRegex)
+			if err != nil {
+				return nil, fmt.Errorf("error compiling user supplied regex: %w", err)
+			}
+
+			binaryRegexFunc = func(path string) bool {
+				return userRegex.MatchString(path)
+			}
+		}
+
 		executableFiles := map[string][]byte{}
 		err := extractor.Extract(ctx, stream, func(ctx context.Context, info archives.FileInfo) error {
 			if info.Mode().IsDir() {
@@ -161,6 +177,10 @@ func DownloadFromUrl(ctx context.Context, req *DownloadRequest) (*DownloadRespon
 			ownerExecutable := info.Mode()&0100 != 0
 
 			if !ownerExecutable {
+				return nil
+			}
+
+			if !binaryRegexFunc(info.NameInArchive) {
 				return nil
 			}
 

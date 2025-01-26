@@ -22,6 +22,7 @@ message GithubRelease {
   string destination_directory = 3;
   optional string name_override = 4;
   bool archive_release = 5;
+  optional string binary_regex = 6;
 }
 
 message SystemPackage {

@@ -149,6 +149,50 @@ func TestExecuteGithubRelease(t *testing.T) {
 		_, err = os.Stat(filepath.Join(destDir, "neovim", "bin", "nvim"))
 		require.NoError(t, err)
 	})
+
+	t.Run("multi-binary release", func(t *testing.T) {
+		const (
+			downloadURL = "http://fake-place.example.com/downloads/uv-x86_64-unknown-linux-musl.tar.gz"
+		)
+
+		tarBytes, err := os.ReadFile("./testdata/github-release/uv-x86_64-unknown-linux-musl.tar.gz")
+		require.NoError(t, err)
+
+		tmpDir := t.TempDir()
+		destDir := filepath.Join(tmpDir, "bin")
+
+		mockTransport := httpmock.NewMockTransport()
+		mockTransport.RegisterResponder(
+			http.MethodGet,
+			downloadURL,
+			httpmock.NewBytesResponder(http.StatusOK, tarBytes),
+		)
+
+		a := NewAgent(AgentConfig{
+			HTTPClient: &http.Client{
+				Transport: mockTransport,
+			},
+			Inventory: NewNoopInventory(NoopInventoryConfig{}),
+		})
+
+		_, err = a.executeSeed_githubRelease(
+			context.Background(),
+			&controllerv1.Seed{
+				Element: &controllerv1.Seed_GithubRelease{
+					GithubRelease: &controllerv1.GithubRelease{
+						DownloadUrl:          downloadURL,
+						DestinationDirectory: destDir,
+						BinaryRegex:          hlp.Ptr(`.*/uv$`),
+					},
+				},
+			},
+		)
+		require.NoError(t, err)
+
+		// Expect to find the uv binary in our bin dir
+		_, err = os.Stat(filepath.Join(destDir, "uv"))
+		require.NoError(t, err)
+	})
 }
 
 func TestFullTrimSuffix(t *testing.T) {

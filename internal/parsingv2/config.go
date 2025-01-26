@@ -194,6 +194,13 @@ func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
 		}
 	}
 
+	if release.BinaryRegex != nil {
+		_, err := regexp.Compile(*release.BinaryRegex)
+		if err != nil {
+			return nil, fmt.Errorf("%w: error parsing binary regex: %w", ErrGithubReleaseInvalidRegexError, err)
+		}
+	}
+
 	return &Seed{
 		Element: &GithubRelease{
 			Repo:           release.Repo,
@@ -201,6 +208,7 @@ func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
 			Tag:            release.Tag,
 			NameOverride:   release.NameOverride,
 			ArchiveRelease: release.ArchiveRelease,
+			BinaryRegex:    release.BinaryRegex,
 		},
 	}, nil
 }

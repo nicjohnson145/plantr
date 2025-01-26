@@ -162,7 +162,6 @@ func (a *Agent) getAccessToken(client controllerv1connect.ControllerServiceClien
 func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) error {
 	var errs []error
 
-
 	noopSkip := func(_ *controllerv1.Seed) bool {
 		return false
 	}
@@ -251,7 +250,6 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 			continue
 		}
 
-
 		if row != nil {
 			row.Hash = seed.Metadata.Hash
 			if err := a.inventory.WriteRow(ctx, *row); err != nil {
@@ -285,7 +283,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, pbseed *controlle
 
 	resp, err := DownloadFromUrl(ctx, &DownloadRequest{
 		Logger: a.log,
-		Client: a.httpClient, URL:    seed.DownloadUrl,
+		Client: a.httpClient, URL: seed.DownloadUrl,
 		RequestModFunc: func(builder *requests.Builder) *requests.Builder {
 			if seed.Authentication != nil && seed.Authentication.BearerAuth != "" {
 				builder = builder.Header("Authorization", seed.Authentication.BearerAuth)
@@ -295,6 +293,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, pbseed *controlle
 		DestinationDirectory: seed.DestinationDirectory,
 		PreserveArchive:      seed.ArchiveRelease,
 		NameOverride:         seed.NameOverride,
+		BinaryRegex:          seed.BinaryRegex,
 	})
 	if err != nil {
 		return nil, err
@@ -449,9 +448,9 @@ func (a *Agent) executeSeed_urlDownload(ctx context.Context, pbseed *controllerv
 	seed := pbseed.Element.(*controllerv1.Seed_UrlDownload).UrlDownload
 
 	resp, err := DownloadFromUrl(ctx, &DownloadRequest{
-		Logger: a.log,
-		Client: a.httpClient,
-		URL:    seed.DownloadUrl,
+		Logger:               a.log,
+		Client:               a.httpClient,
+		URL:                  seed.DownloadUrl,
 		DestinationDirectory: seed.DestinationDirectory,
 		NameOverride:         seed.NameOverride,
 	})

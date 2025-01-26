@@ -232,6 +232,13 @@ func TestGithubRelease(t *testing.T) {
 			},
 			err: "invalid regex: error parsing regex for linux/amd64",
 		},
+		{
+			name: "invalid binary regex",
+			modFunc: func(x *configv1.GithubRelease) {
+				x.BinaryRegex = hlp.Ptr(`[a-z`)
+			},
+			err: "invalid regex: error parsing binary regex",
+		},
 	}
 	for _, tc := range testData {
 		t.Run(tc.name, func(t *testing.T) {

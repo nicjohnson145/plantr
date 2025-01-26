@@ -40,6 +40,7 @@ message GithubRelease {
   }];
   optional string name_override = 4;
   bool archive_release = 5;
+  optional string binary_regex = 6;
 }
 
 message SystemPackage {

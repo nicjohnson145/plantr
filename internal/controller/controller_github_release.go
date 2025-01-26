@@ -85,6 +85,7 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		DestinationDirectory: node.BinDir,
 		NameOverride:         release.NameOverride,
 		ArchiveRelease:       release.ArchiveRelease,
+		BinaryRegex:          release.BinaryRegex,
 	}
 
 	if c.githubReleaseToken != "" {

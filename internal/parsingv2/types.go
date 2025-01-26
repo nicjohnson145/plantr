@@ -40,6 +40,7 @@ type GithubRelease struct {
 	Tag            string
 	NameOverride   *string
 	ArchiveRelease bool
+	BinaryRegex    *string
 }
 
 func (g *GithubRelease) GetAssetPattern(os string, arch string) *regexp.Regexp {
