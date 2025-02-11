@@ -1,6 +1,8 @@
 package parsingv2
 
-import "regexp"
+import (
+	"regexp"
+)
 
 type Node struct {
 	ID             string
@@ -81,6 +83,7 @@ type GoInstall struct {
 }
 
 type UrlDownload struct {
-	NameOverride *string
-	Urls         map[string]map[string]string
+	NameOverride   *string
+	Urls           map[string]map[string]string
+	ArchiveRelease bool
 }

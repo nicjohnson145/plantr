@@ -117,6 +117,7 @@ message UrlDownload {
 
   OsGroup urls = 1;
   optional string name_override = 2;
+  bool archive_release = 3;
 }
 
 message RoleGroup {

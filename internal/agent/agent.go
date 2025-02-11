@@ -453,6 +453,7 @@ func (a *Agent) executeSeed_urlDownload(ctx context.Context, pbseed *controllerv
 		URL:                  seed.DownloadUrl,
 		DestinationDirectory: seed.DestinationDirectory,
 		NameOverride:         seed.NameOverride,
+		PreserveArchive:      seed.ArchiveRelease,
 	})
 	if err != nil {
 		return nil, err

@@ -22,10 +22,13 @@ services:
       context: .
       dockerfile: functional-test-agent.Dockerfile
     environment:
+      #CONTROLLER_ADDRESS: "http://host.docker.internal:8080"
       CONTROLLER_ADDRESS: "http://controller:8080"
       POLL_INTERVAL: "0s"
       NODE_ID: 01JFE97PWY4VGT8B0BNK4W37JJ
       PRIVATE_KEY_PATH: "/opt/keypairs/test-repo-key"
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
     volumes:
     - ./hack/test-repo-keypairs:/opt/keypairs
     ports:

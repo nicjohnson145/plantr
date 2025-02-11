@@ -78,6 +78,7 @@ tasks:
       GIT_TYPE: "static"
       GIT_STATIC_CHECKOUT_PATH:
         sh: "echo ${CHECKOUT}"
+      GIT_ACCESS_TOKEN: "{{ .GIT_ACCESS_TOKEN }}"
     preconditions:
     - sh: '[[ -n "${CHECKOUT}" ]]'
       msg: 'Must specify $CHECKOUT'

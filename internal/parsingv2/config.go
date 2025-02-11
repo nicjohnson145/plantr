@@ -290,8 +290,9 @@ func parseSeed_urlDownload(urlDownload *configv1.UrlDownload) (*Seed, error) {
 	}
 
 	element := &UrlDownload{
-		NameOverride: urlDownload.NameOverride,
-		Urls:         map[string]map[string]string{},
+		NameOverride:   urlDownload.NameOverride,
+		Urls:           map[string]map[string]string{},
+		ArchiveRelease: urlDownload.ArchiveRelease,
 	}
 
 	setArchUrls := func(archGroup *configv1.UrlDownload_OsGroup_ArchGroup) map[string]string {

@@ -64,7 +64,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 1787248,
-      "download_count": 11696,
+      "download_count": 15915,
       "created_at": "2024-09-09T02:29:49Z",
       "updated_at": "2024-09-09T02:29:49Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-aarch64-apple-darwin.tar.gz"
@@ -99,7 +99,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 123,
-      "download_count": 402,
+      "download_count": 652,
       "created_at": "2024-09-09T02:29:49Z",
       "updated_at": "2024-09-09T02:29:49Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-aarch64-apple-darwin.tar.gz.sha256"
@@ -134,7 +134,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 2047405,
-      "download_count": 3983,
+      "download_count": 5435,
       "created_at": "2024-09-09T02:22:58Z",
       "updated_at": "2024-09-09T02:22:58Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-aarch64-unknown-linux-gnu.tar.gz"
@@ -169,7 +169,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 114,
-      "download_count": 285,
+      "download_count": 465,
       "created_at": "2024-09-09T02:22:58Z",
       "updated_at": "2024-09-09T02:22:58Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-aarch64-unknown-linux-gnu.tar.gz.sha256"
@@ -204,7 +204,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 2039117,
-      "download_count": 188,
+      "download_count": 247,
       "created_at": "2024-09-09T02:22:36Z",
       "updated_at": "2024-09-09T02:22:36Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-armv7-unknown-linux-gnueabihf.tar.gz"
@@ -239,7 +239,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 118,
-      "download_count": 42,
+      "download_count": 93,
       "created_at": "2024-09-09T02:22:36Z",
       "updated_at": "2024-09-09T02:22:36Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-armv7-unknown-linux-gnueabihf.tar.gz.sha256"
@@ -274,7 +274,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 1952640,
-      "download_count": 109,
+      "download_count": 151,
       "created_at": "2024-09-09T02:22:44Z",
       "updated_at": "2024-09-09T02:22:44Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-armv7-unknown-linux-musleabi.tar.gz"
@@ -309,7 +309,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 117,
-      "download_count": 41,
+      "download_count": 94,
       "created_at": "2024-09-09T02:22:44Z",
       "updated_at": "2024-09-09T02:22:44Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-armv7-unknown-linux-musleabi.tar.gz.sha256"
@@ -344,7 +344,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 1956387,
-      "download_count": 5698,
+      "download_count": 7513,
       "created_at": "2024-09-09T02:22:49Z",
       "updated_at": "2024-09-09T02:22:49Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-armv7-unknown-linux-musleabihf.tar.gz"
@@ -379,7 +379,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 119,
-      "download_count": 68,
+      "download_count": 131,
       "created_at": "2024-09-09T02:22:49Z",
       "updated_at": "2024-09-09T02:22:49Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-armv7-unknown-linux-musleabihf.tar.gz.sha256"
@@ -414,7 +414,7 @@
       "content_type": "application/zip",
       "state": "uploaded",
       "size": 1918749,
-      "download_count": 1412,
+      "download_count": 1804,
       "created_at": "2024-09-09T02:23:08Z",
       "updated_at": "2024-09-09T02:23:08Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-i686-pc-windows-msvc.zip"
@@ -449,7 +449,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 176,
-      "download_count": 66,
+      "download_count": 122,
       "created_at": "2024-09-09T02:23:08Z",
       "updated_at": "2024-09-09T02:23:08Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-i686-pc-windows-msvc.zip.sha256"
@@ -484,7 +484,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 2357090,
-      "download_count": 288,
+      "download_count": 410,
       "created_at": "2024-09-09T02:22:36Z",
       "updated_at": "2024-09-09T02:22:36Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-i686-unknown-linux-gnu.tar.gz"
@@ -519,7 +519,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 111,
-      "download_count": 52,
+      "download_count": 101,
       "created_at": "2024-09-09T02:22:36Z",
       "updated_at": "2024-09-09T02:22:36Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-i686-unknown-linux-gnu.tar.gz.sha256"
@@ -554,7 +554,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 2397601,
-      "download_count": 180,
+      "download_count": 270,
       "created_at": "2024-09-09T02:22:38Z",
       "updated_at": "2024-09-09T02:22:39Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-powerpc64-unknown-linux-gnu.tar.gz"
@@ -589,7 +589,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 116,
-      "download_count": 37,
+      "download_count": 82,
       "created_at": "2024-09-09T02:22:38Z",
       "updated_at": "2024-09-09T02:22:39Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-powerpc64-unknown-linux-gnu.tar.gz.sha256"
@@ -624,7 +624,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 2712819,
-      "download_count": 95,
+      "download_count": 146,
       "created_at": "2024-09-09T02:22:45Z",
       "updated_at": "2024-09-09T02:22:46Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-s390x-unknown-linux-gnu.tar.gz"
@@ -659,7 +659,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 112,
-      "download_count": 37,
+      "download_count": 83,
       "created_at": "2024-09-09T02:22:45Z",
       "updated_at": "2024-09-09T02:22:45Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-s390x-unknown-linux-gnu.tar.gz.sha256"
@@ -694,7 +694,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 2082672,
-      "download_count": 10243,
+      "download_count": 12764,
       "created_at": "2024-09-09T02:21:40Z",
       "updated_at": "2024-09-09T02:21:40Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-apple-darwin.tar.gz"
@@ -729,7 +729,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 108,
-      "download_count": 115,
+      "download_count": 180,
       "created_at": "2024-09-09T02:21:40Z",
       "updated_at": "2024-09-09T02:21:40Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-apple-darwin.tar.gz.sha256"
@@ -764,7 +764,7 @@
       "content_type": "application/zip",
       "state": "uploaded",
       "size": 10916507,
-      "download_count": 5115,
+      "download_count": 6553,
       "created_at": "2024-09-09T02:22:45Z",
       "updated_at": "2024-09-09T02:22:46Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-pc-windows-gnu.zip"
@@ -799,7 +799,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 177,
-      "download_count": 109,
+      "download_count": 180,
       "created_at": "2024-09-09T02:22:45Z",
       "updated_at": "2024-09-09T02:22:45Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-pc-windows-gnu.zip.sha256"
@@ -834,7 +834,7 @@
       "content_type": "application/zip",
       "state": "uploaded",
       "size": 2058893,
-      "download_count": 45661,
+      "download_count": 57618,
       "created_at": "2024-09-09T02:23:08Z",
       "updated_at": "2024-09-09T02:23:08Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-pc-windows-msvc.zip"
@@ -869,7 +869,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 178,
-      "download_count": 207,
+      "download_count": 287,
       "created_at": "2024-09-09T02:23:08Z",
       "updated_at": "2024-09-09T02:23:08Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-pc-windows-msvc.zip.sha256"
@@ -904,7 +904,7 @@
       "content_type": "application/x-gtar",
       "state": "uploaded",
       "size": 2566310,
-      "download_count": 104605,
+      "download_count": 212155,
       "created_at": "2024-09-09T02:23:19Z",
       "updated_at": "2024-09-09T02:23:20Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz"
@@ -939,7 +939,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 114,
-      "download_count": 6094,
+      "download_count": 9058,
       "created_at": "2024-09-09T02:23:19Z",
       "updated_at": "2024-09-09T02:23:19Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep-14.1.1-x86_64-unknown-linux-musl.tar.gz.sha256"
@@ -974,7 +974,7 @@
       "content_type": "application/x-debian-package",
       "state": "uploaded",
       "size": 1857320,
-      "download_count": 6878,
+      "download_count": 10206,
       "created_at": "2024-09-09T02:24:04Z",
       "updated_at": "2024-09-09T02:24:05Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_amd64.deb"
@@ -1009,7 +1009,7 @@
       "content_type": "application/octet-stream",
       "state": "uploaded",
       "size": 93,
-      "download_count": 584,
+      "download_count": 781,
       "created_at": "2024-09-09T02:24:04Z",
       "updated_at": "2024-09-09T02:24:05Z",
       "browser_download_url": "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_amd64.deb.sha256"
@@ -1020,8 +1020,8 @@
   "body": "[Sponsorship is appreciated!](https://github.com/sponsors/BurntSushi/)\r\n\r\nThis is a minor release with a bug fix for a matching bug. In particular, a bug\r\nwas found that could cause ripgrep to ignore lines that should match. That is,\r\nfalse negatives. It is difficult to characterize the specific set of regexes\r\nin which this occurs as it requires multiple different optimization strategies\r\nto collide and produce an incorrect result. But as one reported example, in\r\nripgrep, the regex `(?i:e.x|ex)` does not match `e-x` when it should. (This\r\nbug is a result of an inner literal optimization performed in the `grep-regex`\r\ncrate and not in the `regex` crate.)\r\n\r\n> In case you haven't heard of it before, ripgrep is a line-oriented search\r\n> tool that recursively searches the current directory for a regex pattern.\r\n> By default, ripgrep will respect gitignore rules and automatically skip\r\n> hidden files/directories and binary files.\r\n\r\nBug fixes:\r\n\r\n* [BUG #2884](https://github.com/BurntSushi/ripgrep/issues/2884):\r\n  Fix bug where ripgrep could miss some matches that it should report.\r\n\r\nMiscellaneous:\r\n\r\n* [MISC #2748](https://github.com/BurntSushi/ripgrep/issues/2748):\r\n  Remove ripgrep's `simd-accel` feature because it was frequently broken.",
   "reactions": {
     "url": "https://api.github.com/repos/BurntSushi/ripgrep/releases/174041155/reactions",
-    "total_count": 86,
-    "+1": 47,
+    "total_count": 87,
+    "+1": 48,
     "-1": 0,
     "laugh": 4,
     "hooray": 3,

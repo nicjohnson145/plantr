@@ -60,6 +60,7 @@ message UrlDownload {
   string download_url = 1;
   string destination_directory = 2;
   optional string name_override = 3;
+  bool archive_release = 4;
 }
 
 message Seed {

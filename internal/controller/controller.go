@@ -483,7 +483,7 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 		case *parsingv2.ConfigFile:
 			s, err := c.renderSeed_configFile(concrete, node, vaultData, namedSeeds)
 			if err != nil {
-				return nil, fmt.Errorf("error converting config file: %w", err)
+				return nil, fmt.Errorf("error converting config file %v: %w", concrete.Destination, err)
 			}
 			outSeeds[i] = s
 		case *parsingv2.GithubRelease:
@@ -690,6 +690,7 @@ func (c *Controller) renderSeed_urlDownload(urlDownload *parsingv2.UrlDownload, 
 				NameOverride:         urlDownload.NameOverride,
 				DownloadUrl:          url,
 				DestinationDirectory: node.BinDir,
+				ArchiveRelease:       urlDownload.ArchiveRelease,
 			},
 		},
 	}, nil

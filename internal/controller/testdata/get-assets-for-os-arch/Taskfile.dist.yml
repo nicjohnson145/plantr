@@ -25,6 +25,16 @@ tasks:
         REPO: neovim/neovim
         TAG: v0.10.3
         NAME: neovim
+    - task: fetch-assets
+      vars:
+        REPO: rs/curlie
+        TAG: v1.7.2
+        NAME: curlie
+    - task: fetch-assets
+      vars:
+        REPO: kubernetes/minikube
+        TAG: v1.35.0
+        NAME: minikube
 
 
   fetch-assets:

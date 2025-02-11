@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
@@ -17,10 +18,11 @@ import (
 
 func TestGithubRelease_GetAssetForOSArch(t *testing.T) {
 	testData := []struct {
-		file string
-		os   string
-		arch string
-		want string
+		file          string
+		os            string
+		arch          string
+		want          string
+		assetPatterns map[string]map[string]*regexp.Regexp
 	}{
 		{
 			file: "ripgrep-14.1.1",
@@ -64,6 +66,23 @@ func TestGithubRelease_GetAssetForOSArch(t *testing.T) {
 			arch: "amd64",
 			want: "nvim-linux64.tar.gz",
 		},
+		{
+			file: "curlie-v1.7.2",
+			os:   "linux",
+			arch: "amd64",
+			want: "curlie_1.7.2_linux_amd64.tar.gz",
+		},
+		{
+			file: "minikube-v1.35.0",
+			os:   "linux",
+			arch: "amd64",
+			want: "minikube-linux-amd64",
+			assetPatterns: map[string]map[string]*regexp.Regexp{
+				"linux": {
+					"amd64": regexp.MustCompile(`^minikube-linux-amd64$`),
+				},
+			},
+		},
 	}
 
 	ctrl := &Controller{
@@ -79,7 +98,9 @@ func TestGithubRelease_GetAssetForOSArch(t *testing.T) {
 			require.NoError(t, json.Unmarshal(content, &resp))
 
 			got, err := ctrl.getAssetForOSArch(
-				&parsingv2.GithubRelease{},
+				&parsingv2.GithubRelease{
+					AssetPatterns: tc.assetPatterns,
+				},
 				&parsingv2.Node{
 					OS:   tc.os,
 					Arch: tc.arch,

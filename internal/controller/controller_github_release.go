@@ -2,7 +2,7 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"regexp"
@@ -11,8 +11,6 @@ import (
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var (
@@ -26,6 +24,11 @@ type githubTagResponse struct {
 type githubAsset struct {
 	Name        string `json:"name"`
 	DownloadUrl string `json:"browser_download_url"`
+}
+
+func basicAuth(user string, pass string) string {
+	hash := base64.StdEncoding.EncodeToString([]byte(user + ":" + pass))
+	return "Basic " + hash
 }
 
 func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.Seed, error) {
@@ -53,7 +56,7 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		if c.githubReleaseToken == "" {
 			c.log.Warn().Msg("making un-authenticated request to github API, this will likely result in being very quickly rate limited")
 		} else {
-			builder = builder.Header("Authorization", c.githubReleaseToken)
+			builder = builder.Header("Authorization", basicAuth("__token__", c.githubReleaseToken))
 		}
 
 		if err := builder.Fetch(context.Background()); err != nil {
@@ -106,17 +109,16 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 
 var (
 	regexMusl     = regexp.MustCompile(`(?i)musl`)
-	regexChecksum = regexp.MustCompile(`(?i)\b(.sha256|.sha256sum)$`)
-	regexLinuxPkg = regexp.MustCompile(`(?i)\b(\.deb|\.rpm|\.apk)$`)
+	regexChecksum = regexp.MustCompile(`(?i)(\b|_|-)(.sha256|.sha256sum|.sig)$`)
+	regexLinuxPkg = regexp.MustCompile(`(?i)(\b|_|-)(\.deb|\.rpm|\.apk)$`)
 
 	osRegexMap = map[string]*regexp.Regexp{
-		"linux":  regexp.MustCompile(`(?i)\blinux`),
-		"darwin": regexp.MustCompile(`(?i)\b(darwin|mac(os)?|apple|osx)`),
-	}
+		"linux":  regexp.MustCompile(`(?i)(\b|_|-)linux`),
+		"darwin": regexp.MustCompile(`(?i)(\b|_|-)(darwin|mac(os)?|apple|osx)`), }
 
 	archRegexMap = map[string]*regexp.Regexp{
-		"amd64": regexp.MustCompile(`(?i)\b(x86_64|amd64|x64)`),
-		"arm64": regexp.MustCompile(`(?i)\b(arm64|aarch64)`),
+		"amd64": regexp.MustCompile(`(?i)(\b|_|-)(x86_64|amd64|x64)`),
+		"arm64": regexp.MustCompile(`(?i)(\b|_|-)(arm64|aarch64)`),
 	}
 )
 
@@ -128,6 +130,7 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 		if len(assets) != 1 {
 			return nil, fmt.Errorf("expected 1 matching asset for user pattern, got %v", len(assets))
 		}
+		return &assets[0], nil
 	}
 
 	c.log.Debug().Msg("no pattern given, attempting to auto-detect")
@@ -198,7 +201,6 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 		}
 		c.log.Trace().Msg(step.msg)
 		filteredAssets = c.filterAssets(filteredAssets, patt, step.shouldMatch)
-		MarshallDebug(filteredAssets)
 		if len(filteredAssets) == 1 {
 			return &filteredAssets[0], nil
 		}
@@ -209,24 +211,6 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 
 	c.log.Trace().Msg("filtering exhausted, giving up")
 	return nil, ErrUnableToAutoDetectAssetError
-}
-
-func MarshallDebug(x any) {
-	var outBytes []byte
-	var err error
-	if protoMsg, ok := x.(protoreflect.ProtoMessage); ok {
-		opts := protojson.MarshalOptions{
-			Indent: "    ",
-		}
-		outBytes, err = opts.Marshal(protoMsg)
-	} else {
-		outBytes, err = json.MarshalIndent(x, "", "   ")
-	}
-	if err != nil {
-		fmt.Printf("Unable to marshall object for debugging: %v\n", err)
-		panic("unable to marshall")
-	}
-	fmt.Println("\n" + string(outBytes))
 }
 
 func (c *Controller) filterAssets(assets []githubAsset, pat *regexp.Regexp, match bool) []githubAsset {
