@@ -51,7 +51,7 @@ func TestRenderSeedConfigFile(t *testing.T) {
 		wantPb := []*pbv1.Seed{
 			{
 				Metadata: &pbv1.Seed_Metadata{
-					DisplayName: "/tmp/someuser/seed-one",
+					DisplayName: "seed-one",
 				},
 				Element: &pbv1.Seed_ConfigFile{
 					ConfigFile: &pbv1.ConfigFile{
@@ -62,7 +62,7 @@ func TestRenderSeedConfigFile(t *testing.T) {
 			},
 			{
 				Metadata: &pbv1.Seed_Metadata{
-					DisplayName: "/tmp/someuser/seed-two",
+					DisplayName: "~/seed-two",
 				},
 				Element: &pbv1.Seed_ConfigFile{
 					ConfigFile: &pbv1.ConfigFile{

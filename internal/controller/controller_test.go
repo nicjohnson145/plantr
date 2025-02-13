@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -129,51 +128,6 @@ func TestController_Login(t *testing.T) {
 	})
 }
 
-func TestController_CollectSeeds(t *testing.T) {
-	t.Parallel()
-
-	t.Run("basic deduplication smokes", func(t *testing.T) {
-		t.Parallel()
-
-		ctrl := newControllerWithConfig(
-			t,
-			ControllerConfig{},
-			hlp.Must(parsingv2.ParseFS(os.DirFS("./testdata/collect-seeds/basic"))),
-		)
-
-		got, _, err := ctrl.collectSeeds("01JD340PST4R6PY8EDZ5JW127T")
-		require.NoError(t, err)
-
-		sortSeeds(got)
-
-		seedsEqual(
-			t,
-			[]*parsingv2.Seed{
-				{
-					Element: &parsingv2.ConfigFile{
-						TemplateContent: "hello from template-two\n",
-						Destination:     "~/template-two",
-					},
-				},
-				{
-					Element: &parsingv2.ConfigFile{
-						TemplateContent: "hello from template-three\n",
-						Destination:     "~/template-three",
-					},
-				},
-				{
-					Element: &parsingv2.ConfigFile{
-						TemplateContent: "hello from template-one\n",
-						Destination:     "~/template-one",
-					},
-				},
-			},
-			got,
-		)
-	})
-
-}
-
 func TestController_GetSyncData(t *testing.T) {
 	t.Parallel()
 
@@ -220,7 +174,7 @@ func TestController_GetSyncData(t *testing.T) {
 				Seeds: []*pbv1.Seed{
 					{
 						Metadata: &pbv1.Seed_Metadata{
-							DisplayName: "/home/fake-user/foo/bar",
+							DisplayName: "~/foo/bar",
 						},
 						Element: &pbv1.Seed_ConfigFile{
 							ConfigFile: &pbv1.ConfigFile{

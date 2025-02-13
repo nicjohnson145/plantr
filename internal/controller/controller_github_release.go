@@ -32,9 +32,7 @@ func basicAuth(user string, pass string) string {
 }
 
 func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.Seed, error) {
-	c.log.Debug().Msgf("rendering github release %v/%v", release.Repo, release.Tag)
-
-	c.log.Debug().Msg("reading asset cache")
+	c.log.Trace().Msg("reading asset cache")
 	assertUrl, err := c.store.ReadGithubReleaseAsset(ctx, &DBGithubRelease{
 		Hash: c.hashFunc(&parsingv2.Seed{
 			Element: release,
@@ -46,7 +44,7 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		return nil, fmt.Errorf("error reading asset cache: %w", err)
 	}
 	if assertUrl == "" {
-		c.log.Debug().Msg("cache miss, attempting to get release asset from GitHub")
+		c.log.Trace().Msg("cache miss, attempting to get release asset from GitHub")
 		var resp githubTagResponse
 		builder := requests.
 			URL("https://api.github.com").
@@ -98,9 +96,6 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 	}
 
 	return &pbv1.Seed{
-		Metadata: &pbv1.Seed_Metadata{
-			DisplayName: release.Repo,
-		},
 		Element: &pbv1.Seed_GithubRelease{
 			GithubRelease: outRelease,
 		},
@@ -125,7 +120,7 @@ var (
 func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *parsingv2.Node, assets []githubAsset) (*githubAsset, error) {
 	userPattern := release.GetAssetPattern(node.OS, node.Arch)
 	if userPattern != nil {
-		c.log.Debug().Msg("using user defined asset pattern")
+		c.log.Trace().Msg("using user defined asset pattern")
 		assets := c.filterAssets(assets, userPattern, true)
 		if len(assets) != 1 {
 			return nil, fmt.Errorf("expected 1 matching asset for user pattern, got %v", len(assets))
@@ -133,7 +128,7 @@ func (c *Controller) getAssetForOSArch(release *parsingv2.GithubRelease, node *p
 		return &assets[0], nil
 	}
 
-	c.log.Debug().Msg("no pattern given, attempting to auto-detect")
+	c.log.Trace().Msg("no pattern given, attempting to auto-detect")
 
 	type filterStep struct {
 		function    func() (*regexp.Regexp, error)

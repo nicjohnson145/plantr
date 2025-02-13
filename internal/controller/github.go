@@ -80,7 +80,7 @@ func (g *GithubGitClient) GetLatestCommit(url string) (string, error) {
 		Fetch(context.Background())
 
 	if err != nil {
-		g.log.Debug().Interface("body", errResp).Msg("error response body")
+		g.log.Error().Interface("body", errResp).Msg("error response body")
 		return "", fmt.Errorf("error querying commits: %w", err)
 	}
 
@@ -135,7 +135,7 @@ func (g *GithubGitClient) GetLatestRelease(url string) (string, error) {
 		ErrorJSON(&errResp).
 		Fetch(context.Background())
 	if err != nil {
-		g.log.Debug().Interface("body", errResp).Msg("error response body")
+		g.log.Error().Interface("body", errResp).Msg("error response body")
 		return "", fmt.Errorf("error getting latest release: %w", err)
 	}
 
