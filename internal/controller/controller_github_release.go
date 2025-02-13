@@ -33,10 +33,12 @@ func basicAuth(user string, pass string) string {
 
 func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.Seed, error) {
 	c.log.Trace().Msg("reading asset cache")
+	hash, err := c.hashFunc(&parsingv2.Seed{Element: release}, node)
+	if err != nil {
+		return nil, err
+	}
 	assertUrl, err := c.store.ReadGithubReleaseAsset(ctx, &DBGithubRelease{
-		Hash: c.hashFunc(&parsingv2.Seed{
-			Element: release,
-		}),
+		Hash: hash,
 		OS:   node.OS,
 		Arch: node.Arch,
 	})
@@ -69,9 +71,7 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		assertUrl = asset.DownloadUrl
 
 		cachedRelease := &DBGithubRelease{
-			Hash: c.hashFunc(&parsingv2.Seed{
-				Element: release,
-			}),
+			Hash:        hash,
 			OS:          node.OS,
 			Arch:        node.Arch,
 			DownloadURL: assertUrl,
@@ -109,7 +109,7 @@ var (
 
 	osRegexMap = map[string]*regexp.Regexp{
 		"linux":  regexp.MustCompile(`(?i)(\b|_|-)linux`),
-		"darwin": regexp.MustCompile(`(?i)(\b|_|-)(darwin|mac(os)?|apple|osx)`), }
+		"darwin": regexp.MustCompile(`(?i)(\b|_|-)(darwin|mac(os)?|apple|osx)`)}
 
 	archRegexMap = map[string]*regexp.Regexp{
 		"amd64": regexp.MustCompile(`(?i)(\b|_|-)(x86_64|amd64|x64)`),

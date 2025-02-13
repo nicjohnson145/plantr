@@ -146,8 +146,8 @@ func TestGithubRelease_AssetUrlCaching(t *testing.T) {
 				Transport: mockTransport,
 			},
 			StorageClient: mockStore,
-			HashFunc: func(s *parsingv2.Seed) string {
-				return hash
+			HashFunc: func(s *parsingv2.Seed, n *parsingv2.Node) (string, error) {
+				return hash, nil
 			},
 		})
 		require.NoError(t, err)
@@ -206,8 +206,8 @@ func TestGithubRelease_AssetUrlCaching(t *testing.T) {
 				Transport: mockTransport,
 			},
 			StorageClient: mockStore,
-			HashFunc: func(s *parsingv2.Seed) string {
-				return hash
+			HashFunc: func(s *parsingv2.Seed, n *parsingv2.Node) (string, error) {
+				return hash, nil
 			},
 		})
 		require.NoError(t, err)

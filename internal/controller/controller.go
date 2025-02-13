@@ -54,8 +54,8 @@ type ControllerConfig struct {
 
 	GithubWebhookSecret []byte
 
-	NowFunc  func() time.Time             // for unit tests
-	HashFunc func(*parsingv2.Seed) string // for unit tests
+	NowFunc  func() time.Time                                       // for unit tests
+	HashFunc func(*parsingv2.Seed, *parsingv2.Node) (string, error) // for unit tests
 }
 
 func NewController(conf ControllerConfig) (*Controller, error) {
@@ -86,7 +86,9 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		}
 	}
 	if ctrl.hashFunc == nil {
-		ctrl.hashFunc = seedHash
+		ctrl.hashFunc = func(s *parsingv2.Seed, node *parsingv2.Node) (string, error) {
+			return s.ComputeHash(node)
+		}
 	}
 
 	return ctrl, nil
@@ -111,8 +113,8 @@ type Controller struct {
 	vaultMu   *sync.RWMutex
 	vaultData *vaultData
 
-	nowFunc  func() time.Time             // for unit tests
-	hashFunc func(*parsingv2.Seed) string // for unit tests
+	nowFunc  func() time.Time                                       // for unit tests
+	hashFunc func(*parsingv2.Seed, *parsingv2.Node) (string, error) // for unit tests
 }
 
 func (c *Controller) now() time.Time {
@@ -489,7 +491,7 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 		}
 
 		c.log.Debug().Msgf("rendering seed %v", displayName)
-		hash, err := seed.ComputeHash(node)
+		hash, err := c.hashFunc(seed, node)
 		if err != nil {
 			return nil, namedError(err)
 		}
