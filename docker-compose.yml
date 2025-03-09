@@ -20,7 +20,7 @@ services:
   agent:
     build:
       context: .
-      dockerfile: functional-test-agent.Dockerfile
+      dockerfile: functional-test-agent-ubuntu.Dockerfile
     environment:
       #CONTROLLER_ADDRESS: "http://host.docker.internal:8080"
       CONTROLLER_ADDRESS: "http://controller:8080"
@@ -37,7 +37,7 @@ services:
   agent-brew:
     build:
       context: .
-      dockerfile: functional-test-agent.Dockerfile
+      dockerfile: functional-test-agent-ubuntu.Dockerfile
     environment:
       CONTROLLER_ADDRESS: "http://controller:8080"
       POLL_INTERVAL: "0s"
