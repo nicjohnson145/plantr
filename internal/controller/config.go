@@ -36,9 +36,9 @@ const (
 
 	SqliteDBPath = "sqlite.db_path"
 
-	GitType             = "git.type"
-	GitAccessToken      = "git.access_token"
-	GitUrl              = "git.url"
+	GitType        = "git.type"
+	GitAccessToken = "git.access_token"
+	GitUrl         = "git.url"
 
 	GithubWebhookSecret = "github.webhook_secret" //nolint:gosec // its env config, relax
 
@@ -47,8 +47,12 @@ const (
 	JWTSigningKey = "jwt.signing_key"
 	JWTDuration   = "jwt.duration"
 
-	VaultEnabled          = "vault.enabled"
-	VaultHashicorpAddress = "vault.hashicorp.address"
+	VaultEnabled             = "vault.enabled"
+	VaultHashicorpAddress    = "vault.hashicorp.address"
+	VaultHashicorpUsername   = "vault.hashicorp.username"
+	VaultHashicorpPassword   = "vault.hashicorp.password"
+	VaultHashicorpTTL        = "vault.hashicorp.ttl"
+	VaultHashicorpSecretPath = "vault.hashicorp.secret_path"
 )
 
 var (

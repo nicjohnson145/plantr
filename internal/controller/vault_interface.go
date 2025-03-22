@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"context"
+
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
 
 type VaultClient interface {
-	GetSecretVersion() (string, error)
-	ReadSecretData() (map[string]any, error)
+	ReadSecretData(ctx context.Context) (map[string]any, error)
 }
 
 func NewVaultFromEnv(logger zerolog.Logger) (VaultClient, error) {
@@ -18,6 +19,11 @@ func NewVaultFromEnv(logger zerolog.Logger) (VaultClient, error) {
 	}
 
 	return NewHashicorpVault(HashicorpVaultConfig{
-		Logger: logger,
+		Logger:     logger,
+		Address:    viper.GetString(VaultHashicorpAddress),
+		Username:   viper.GetString(VaultHashicorpUsername),
+		Password:   viper.GetString(VaultHashicorpPassword),
+		SecretPath: viper.GetString(VaultHashicorpSecretPath),
+		TokenTTL:   viper.GetDuration(VaultHashicorpTTL),
 	}), nil
 }

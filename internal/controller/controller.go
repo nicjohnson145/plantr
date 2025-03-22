@@ -191,23 +191,12 @@ func (c *Controller) cloneConfig() (*parsingv2.Config, error) {
 	return out, nil
 }
 
-func (c *Controller) ensureVault() error {
+func (c *Controller) ensureVault(ctx context.Context) error {
 	c.vaultMu.Lock()
 	defer c.vaultMu.Unlock()
 
-	c.log.Trace().Msg("getting latest secret version")
-	latest, err := c.vault.GetSecretVersion()
-	if err != nil {
-		return fmt.Errorf("error getting latest secret version: %w", err)
-	}
-
-	if c.vaultData != nil && c.vaultData.Version == latest {
-		c.log.Debug().Msg("vautl data already at latest version, nothing to do")
-		return nil
-	}
-
 	c.log.Trace().Msg("fetching secret data")
-	data, err := c.vault.ReadSecretData()
+	data, err := c.vault.ReadSecretData(ctx)
 	if err != nil {
 		return fmt.Errorf("error reading secret data: %w", err)
 	}
@@ -215,7 +204,6 @@ func (c *Controller) ensureVault() error {
 	if c.vaultData == nil {
 		c.vaultData = &vaultData{}
 	}
-	c.vaultData.Version = latest
 	c.vaultData.Data = data
 
 	return nil
@@ -462,7 +450,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, *parsingv2.
 
 func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seeds []*parsingv2.Seed) ([]*pbv1.Seed, error) {
 	// Do this once per render instead of once per config file
-	if err := c.ensureVault(); err != nil {
+	if err := c.ensureVault(ctx); err != nil {
 		return nil, fmt.Errorf("error ensuring vault data: %w", err)
 	}
 	vaultData, err := c.cloneVaultData()
