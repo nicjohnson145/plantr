@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 
 	"github.com/jarcoal/httpmock"
+	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/parsingv2"
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/mock"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 )
 
@@ -125,94 +127,41 @@ func TestGithubRelease_AssetUrlCaching(t *testing.T) {
 		downloadURL = "some-download-url"
 	)
 
-	t.Run("cache hit", func(t *testing.T) {
-		t.Parallel()
+	t.Run("smokes", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		t.Cleanup(viper.Reset)
+		viper.Set(SqliteDBPath, filepath.Join(tmpDir, "some-db.sqlite"))
+		viper.Set(StorageType, StorageKindSqlite.String())
 
-		// Intentionally dont set any resolvers here, we shouldnt call the GitHub API on a cache hit
-		mockTransport := httpmock.NewMockTransport()
-
-		mockStore := NewMockStorageClient(t)
-		mockStore.
-			EXPECT().
-			ReadGithubReleaseAsset(mock.Anything, &DBGithubRelease{
-				Hash: hash,
-				OS:   nodeOS,
-				Arch: nodeArch,
-			}).
-			Return(downloadURL, nil)
-
-		ctrl, err := NewController(ControllerConfig{
-			HttpClient: &http.Client{
-				Transport: mockTransport,
-			},
-			StorageClient: mockStore,
-			HashFunc: func(s *parsingv2.Seed, n *parsingv2.Node) (string, error) {
-				return hash, nil
-			},
-		})
+		storageClient, storageCleanup, err := NewStorageClientFromEnv(zerolog.New(os.Stderr))
 		require.NoError(t, err)
+		t.Cleanup(storageCleanup)
 
-		release, err := ctrl.renderSeed_githubRelease(context.Background(), &parsingv2.GithubRelease{}, &parsingv2.Node{
-			OS:   nodeOS,
-			Arch: nodeArch,
-		})
-		require.NoError(t, err)
-
-		require.Equal(t, downloadURL, release.GetGithubRelease().DownloadUrl)
-	})
-
-	t.Run("cache miss", func(t *testing.T) {
-		t.Parallel()
-
+		url := fmt.Sprintf("https://api.github.com/repos/%v/releases/tags/%v", releaseRepo, releaseTag)
 		mockTransport := httpmock.NewMockTransport()
 		mockTransport.RegisterResponder(
 			http.MethodGet,
-			fmt.Sprintf("https://api.github.com/repos/%v/releases/tags/%v", releaseRepo, releaseTag),
-			httpmock.NewJsonResponderOrPanic(
-				http.StatusOK,
-				map[string]any{
-					"assets": []map[string]any{
-						{
-							"name":                 "some-binary-linux-amd64",
-							"browser_download_url": downloadURL,
-						},
+			url,
+			httpmock.NewJsonResponderOrPanic(http.StatusOK, map[string]any{
+				"assets": []map[string]any{
+					{
+						"name":                 "some-bin-linux-amd64",
+						"browser_download_url": downloadURL,
 					},
 				},
-			),
+			}),
 		)
 
-		mockStore := NewMockStorageClient(t)
-		mockStore.
-			EXPECT().
-			ReadGithubReleaseAsset(mock.Anything, &DBGithubRelease{
-				Hash: hash,
-				OS:   nodeOS,
-				Arch: nodeArch,
-			}).
-			Return("", nil)
-
-		mockStore.
-			EXPECT().
-			WriteGithubReleaseAsset(mock.Anything, &DBGithubRelease{
-				Hash:        hash,
-				OS:          nodeOS,
-				Arch:        nodeArch,
-				DownloadURL: downloadURL,
-			}).
-			Return(nil)
-
 		ctrl, err := NewController(ControllerConfig{
+			StorageClient: storageClient,
 			HttpClient: &http.Client{
 				Transport: mockTransport,
-			},
-			StorageClient: mockStore,
-			HashFunc: func(s *parsingv2.Seed, n *parsingv2.Node) (string, error) {
-				return hash, nil
 			},
 		})
 		require.NoError(t, err)
 
-		release, err := ctrl.renderSeed_githubRelease(
+		// Execute it once to set the cache
+		got, err := ctrl.renderSeed_githubRelease(
 			context.Background(),
 			&parsingv2.GithubRelease{
 				Repo: releaseRepo,
@@ -224,7 +173,50 @@ func TestGithubRelease_AssetUrlCaching(t *testing.T) {
 			},
 		)
 		require.NoError(t, err)
+		require.Equal(
+			t,
+			&pbv1.Seed{
+				Element: &pbv1.Seed_GithubRelease{
+					GithubRelease: &pbv1.GithubRelease{
+						DownloadUrl: downloadURL,
+					},
+				},
+			},
+			got,
+		)
 
-		require.Equal(t, downloadURL, release.GetGithubRelease().DownloadUrl)
+		// Execute it again to ensure the cache is read from
+		got, err = ctrl.renderSeed_githubRelease(
+			context.Background(),
+			&parsingv2.GithubRelease{
+				Repo: releaseRepo,
+				Tag:  releaseTag,
+			},
+			&parsingv2.Node{
+				OS:   nodeOS,
+				Arch: nodeArch,
+			},
+		)
+		require.NoError(t, err)
+		require.Equal(
+			t,
+			&pbv1.Seed{
+				Element: &pbv1.Seed_GithubRelease{
+					GithubRelease: &pbv1.GithubRelease{
+						DownloadUrl: downloadURL,
+					},
+				},
+			},
+			got,
+		)
+
+		// Make sure we only hit the GH url once
+		require.Equal(
+			t,
+			map[string]int{
+				"GET " + url: 1,
+			},
+			mockTransport.GetCallCountInfo(),
+		)
 	})
 }
