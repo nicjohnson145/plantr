@@ -50,12 +50,7 @@ var (
 	DefaultPollInterval = "0s"
 )
 
-func InitConfig() error {
-	cachedir, err := os.UserCacheDir()
-	if err != nil {
-		return fmt.Errorf("error getting user cache dir: %w", err)
-	}
-
+func SetServiceDefaults() {
 	viper.SetDefault(Port, DefaultPort)
 
 	viper.SetDefault(LoggingLevel, DefaultLogLevel)
@@ -64,9 +59,25 @@ func InitConfig() error {
 	viper.SetDefault(LogResponses, DefaultLogResponses)
 
 	viper.SetDefault(PollInterval, DefaultPollInterval)
+}
+
+func SetWorkerDefaults() error {
+	cachedir, err := os.UserCacheDir()
+	if err != nil {
+		return fmt.Errorf("error getting user cache dir: %w", err)
+	}
 
 	viper.SetDefault(StorageType, DefaultStorageType)
 	viper.SetDefault(SqliteDBPath, filepath.Join(cachedir, "plantr", "storage.db"))
+
+	return nil
+}
+
+func InitConfig() error {
+	SetServiceDefaults()
+	if err := SetWorkerDefaults(); err != nil {
+		return err
+	}
 
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

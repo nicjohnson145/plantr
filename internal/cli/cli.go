@@ -1,24 +1,31 @@
 package cli
 
 import (
+	"context"
+	"fmt"
 	"os"
 
+	agentv1 "github.com/nicjohnson145/plantr/gen/plantr/agent/v1"
+	"github.com/nicjohnson145/plantr/internal/agent"
 	"github.com/nicjohnson145/plantr/internal/encryption"
 	"github.com/rs/zerolog"
 )
 
 type CLIConfig struct {
 	Logger zerolog.Logger
+	Agent  *agent.Agent
 }
 
 func NewCLI(conf CLIConfig) *CLI {
 	return &CLI{
-		log: conf.Logger,
+		log:   conf.Logger,
+		agent: conf.Agent,
 	}
 }
 
 type CLI struct {
-	log zerolog.Logger
+	log   zerolog.Logger
+	agent *agent.Agent
 }
 
 func (c *CLI) GenerateKeyPair() error {
@@ -38,5 +45,13 @@ func (c *CLI) GenerateKeyPair() error {
 		return err
 	}
 
+	return nil
+}
+
+func (c *CLI) Sync() error {
+	_, err := c.agent.Sync(context.Background(), &agentv1.SyncRequest{})
+	if err != nil {
+		return fmt.Errorf("error syncing:\n%w", err)
+	}
 	return nil
 }

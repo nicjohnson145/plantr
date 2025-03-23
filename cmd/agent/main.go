@@ -50,47 +50,12 @@ func run() error {
 		agentv1connect.AgentServiceName,
 	)
 
-	// Actual sync worker
-	keyPath := viper.GetString(agent.PrivateKeyPath)
-	if keyPath == "" {
-		msg := "private key path must be set"
-		logger.Error().Msg(msg)
-		return errors.New(msg)
-	}
-	privateKeyBytes, err := os.ReadFile(keyPath)
+	worker, workerCleanup, err := agent.NewAgentFromEnv(logging.Component(logger, "agent-worker"))
 	if err != nil {
-		logger.Err(err).Msg("error reading private key")
+		logger.Err(err).Msg("error creating agent worker")
 		return err
 	}
-
-	controllerAddress := viper.GetString(agent.ControllerAddress)
-	if controllerAddress == "" {
-		msg := "controller address must be set"
-		logger.Error().Msg(msg)
-		return errors.New(msg)
-	}
-
-	nodeID := viper.GetString(agent.NodeID)
-	if nodeID == "" {
-		msg := "node id must be set"
-		logger.Error().Msg(msg)
-		return errors.New(msg)
-	}
-
-	inventory, inventoryCleanup, err := agent.NewInventoryClientFromEnv(logging.Component(logger, "inventory"))
-	defer inventoryCleanup()
-	if err != nil {
-		logger.Err(err).Msg("error creating inventory client")
-		return err
-	}
-
-	worker := agent.NewAgent(agent.AgentConfig{
-		Logger:            logging.Component(logger, "agent-worker"),
-		NodeID:            nodeID,
-		ControllerAddress: controllerAddress,
-		PrivateKey:        string(privateKeyBytes),
-		Inventory:         inventory,
-	})
+	defer workerCleanup()
 
 	srv := agent.NewService(agent.ServiceConfig{
 		Logger: logging.Component(logger, "service"),

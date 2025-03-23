@@ -25,6 +25,7 @@ func root() *cobra.Command {
 
 	cmd.AddCommand(
 		generateKeyPair(),
+		sync(),
 	)
 
 	return cmd

@@ -177,6 +177,10 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 	})
 
 	for _, seed := range seeds {
+		namedError := func(err error, ctx string) error {
+			return fmt.Errorf("%v: %v, %w", seed.Metadata.DisplayName, ctx, err)
+		}
+
 		var executeFunc func(context.Context, *controllerv1.Seed) (*InventoryRow, error)
 		var skipInventoryFunc func(*controllerv1.Seed) bool
 		var preExecuteFunc func() error
@@ -232,7 +236,7 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 		if !skipInventoryFunc(seed) {
 			row, err := a.inventory.GetRow(ctx, seed.Metadata.Hash)
 			if err != nil {
-				return fmt.Errorf("error reading inventory: %w", err)
+				return namedError(err, "error reading inventory")
 			}
 			if row != nil {
 				a.log.Debug().Msg("already exists in inventory, skipping")
@@ -241,19 +245,19 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 		}
 
 		if err := preExecuteFunc(); err != nil {
-			return fmt.Errorf("error execute executing pre-execute func: %w", err)
+			return namedError(err, "error executing pre-execute function")
 		}
 
 		row, err := executeFunc(ctx, seed)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("error executing: %w", err))
+			errs = append(errs, namedError(err, "error executing"))
 			continue
 		}
 
 		if row != nil {
 			row.Hash = seed.Metadata.Hash
 			if err := a.inventory.WriteRow(ctx, *row); err != nil {
-				errs = append(errs, fmt.Errorf("error writing to inventory: %w", err))
+				errs = append(errs, namedError(err, "error writing to inventory"))
 				continue
 			}
 		}
@@ -265,7 +269,7 @@ func (a *Agent) executeSeeds(ctx context.Context, seeds []*controllerv1.Seed) er
 func (a *Agent) executeSeed_configFile(ctx context.Context, pbseed *controllerv1.Seed) (*InventoryRow, error) {
 	seed := pbseed.Element.(*controllerv1.Seed_ConfigFile).ConfigFile
 
-	if err := os.MkdirAll(filepath.Dir(seed.Destination), 0775); err != nil {
+	if err := os.MkdirAll(filepath.Dir(seed.Destination), 0755); err != nil {
 		return nil, fmt.Errorf("error creating containing dir: %w", err)
 	}
 	// TODO: configurable permissions
@@ -283,7 +287,8 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, pbseed *controlle
 
 	resp, err := DownloadFromUrl(ctx, &DownloadRequest{
 		Logger: a.log,
-		Client: a.httpClient, URL: seed.DownloadUrl,
+		Client: a.httpClient,
+		URL: seed.DownloadUrl,
 		RequestModFunc: func(builder *requests.Builder) *requests.Builder {
 			if seed.Authentication != nil && seed.Authentication.BearerAuth != "" {
 				builder = builder.Header("Authorization", seed.Authentication.BearerAuth)
