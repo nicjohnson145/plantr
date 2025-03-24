@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
 	agentv1 "github.com/nicjohnson145/plantr/gen/plantr/agent/v1"
@@ -12,8 +13,9 @@ import (
 )
 
 type CLIConfig struct {
-	Logger zerolog.Logger
-	Agent  *agent.Agent
+	Logger     zerolog.Logger
+	Agent      *agent.Agent
+	HTTPClient *http.Client
 }
 
 func NewCLI(conf CLIConfig) *CLI {
@@ -24,8 +26,9 @@ func NewCLI(conf CLIConfig) *CLI {
 }
 
 type CLI struct {
-	log   zerolog.Logger
-	agent *agent.Agent
+	log        zerolog.Logger
+	agent      *agent.Agent
+	httpClient *http.Client
 }
 
 func (c *CLI) GenerateKeyPair() error {
@@ -54,4 +57,8 @@ func (c *CLI) Sync() error {
 		return fmt.Errorf("error syncing:\n%w", err)
 	}
 	return nil
+}
+
+func (c *CLI) ForceRefresh() error {
+	return c.agent.ForceRefresh(context.Background())
 }

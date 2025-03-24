@@ -38,19 +38,24 @@ const (
 	// ControllerServiceGetSyncDataProcedure is the fully-qualified name of the ControllerService's
 	// GetSyncData RPC.
 	ControllerServiceGetSyncDataProcedure = "/plantr.controller.v1.ControllerService/GetSyncData"
+	// ControllerServiceForceRefreshProcedure is the fully-qualified name of the ControllerService's
+	// ForceRefresh RPC.
+	ControllerServiceForceRefreshProcedure = "/plantr.controller.v1.ControllerService/ForceRefresh"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	controllerServiceServiceDescriptor           = v1.File_plantr_controller_v1_service_proto.Services().ByName("ControllerService")
-	controllerServiceLoginMethodDescriptor       = controllerServiceServiceDescriptor.Methods().ByName("Login")
-	controllerServiceGetSyncDataMethodDescriptor = controllerServiceServiceDescriptor.Methods().ByName("GetSyncData")
+	controllerServiceServiceDescriptor            = v1.File_plantr_controller_v1_service_proto.Services().ByName("ControllerService")
+	controllerServiceLoginMethodDescriptor        = controllerServiceServiceDescriptor.Methods().ByName("Login")
+	controllerServiceGetSyncDataMethodDescriptor  = controllerServiceServiceDescriptor.Methods().ByName("GetSyncData")
+	controllerServiceForceRefreshMethodDescriptor = controllerServiceServiceDescriptor.Methods().ByName("ForceRefresh")
 )
 
 // ControllerServiceClient is a client for the plantr.controller.v1.ControllerService service.
 type ControllerServiceClient interface {
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 	GetSyncData(context.Context, *connect.Request[v1.GetSyncDataRequest]) (*connect.Response[v1.GetSyncDataResponse], error)
+	ForceRefresh(context.Context, *connect.Request[v1.ForceRefreshRequest]) (*connect.Response[v1.ForceRefreshResponse], error)
 }
 
 // NewControllerServiceClient constructs a client for the plantr.controller.v1.ControllerService
@@ -75,13 +80,20 @@ func NewControllerServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(controllerServiceGetSyncDataMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		forceRefresh: connect.NewClient[v1.ForceRefreshRequest, v1.ForceRefreshResponse](
+			httpClient,
+			baseURL+ControllerServiceForceRefreshProcedure,
+			connect.WithSchema(controllerServiceForceRefreshMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // controllerServiceClient implements ControllerServiceClient.
 type controllerServiceClient struct {
-	login       *connect.Client[v1.LoginRequest, v1.LoginResponse]
-	getSyncData *connect.Client[v1.GetSyncDataRequest, v1.GetSyncDataResponse]
+	login        *connect.Client[v1.LoginRequest, v1.LoginResponse]
+	getSyncData  *connect.Client[v1.GetSyncDataRequest, v1.GetSyncDataResponse]
+	forceRefresh *connect.Client[v1.ForceRefreshRequest, v1.ForceRefreshResponse]
 }
 
 // Login calls plantr.controller.v1.ControllerService.Login.
@@ -94,11 +106,17 @@ func (c *controllerServiceClient) GetSyncData(ctx context.Context, req *connect.
 	return c.getSyncData.CallUnary(ctx, req)
 }
 
+// ForceRefresh calls plantr.controller.v1.ControllerService.ForceRefresh.
+func (c *controllerServiceClient) ForceRefresh(ctx context.Context, req *connect.Request[v1.ForceRefreshRequest]) (*connect.Response[v1.ForceRefreshResponse], error) {
+	return c.forceRefresh.CallUnary(ctx, req)
+}
+
 // ControllerServiceHandler is an implementation of the plantr.controller.v1.ControllerService
 // service.
 type ControllerServiceHandler interface {
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
 	GetSyncData(context.Context, *connect.Request[v1.GetSyncDataRequest]) (*connect.Response[v1.GetSyncDataResponse], error)
+	ForceRefresh(context.Context, *connect.Request[v1.ForceRefreshRequest]) (*connect.Response[v1.ForceRefreshResponse], error)
 }
 
 // NewControllerServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -119,12 +137,20 @@ func NewControllerServiceHandler(svc ControllerServiceHandler, opts ...connect.H
 		connect.WithSchema(controllerServiceGetSyncDataMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	controllerServiceForceRefreshHandler := connect.NewUnaryHandler(
+		ControllerServiceForceRefreshProcedure,
+		svc.ForceRefresh,
+		connect.WithSchema(controllerServiceForceRefreshMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/plantr.controller.v1.ControllerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ControllerServiceLoginProcedure:
 			controllerServiceLoginHandler.ServeHTTP(w, r)
 		case ControllerServiceGetSyncDataProcedure:
 			controllerServiceGetSyncDataHandler.ServeHTTP(w, r)
+		case ControllerServiceForceRefreshProcedure:
+			controllerServiceForceRefreshHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -140,4 +166,8 @@ func (UnimplementedControllerServiceHandler) Login(context.Context, *connect.Req
 
 func (UnimplementedControllerServiceHandler) GetSyncData(context.Context, *connect.Request[v1.GetSyncDataRequest]) (*connect.Response[v1.GetSyncDataResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("plantr.controller.v1.ControllerService.GetSyncData is not implemented"))
+}
+
+func (UnimplementedControllerServiceHandler) ForceRefresh(context.Context, *connect.Request[v1.ForceRefreshRequest]) (*connect.Response[v1.ForceRefreshResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("plantr.controller.v1.ControllerService.ForceRefresh is not implemented"))
 }

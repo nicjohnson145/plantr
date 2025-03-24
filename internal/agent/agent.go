@@ -91,15 +91,7 @@ func (a *Agent) logAndHandleError(err error, msg string) error {
 	}
 }
 
-func (a *Agent) Sync(ctx context.Context, req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
-	if !a.mu.TryLock() {
-		return nil, ErrSyncInProgressError
-	}
-	defer a.mu.Unlock()
-
-	a.log.Info().Msg("beginning sync")
-
-	a.log.Debug().Msg("fetching sync data")
+func (a *Agent) newClientWithToken() (controllerv1connect.ControllerServiceClient, error) {
 	client := controllerv1connect.NewControllerServiceClient(http.DefaultClient, a.controllerAddress)
 	token, err := a.getAccessToken(client)
 	if err != nil {
@@ -111,6 +103,23 @@ func (a *Agent) Sync(ctx context.Context, req *pbv1.SyncRequest) (*pbv1.SyncResp
 		a.controllerAddress,
 		connect.WithInterceptors(interceptors.NewClientAuthInterceptor(token)),
 	)
+
+	return client, nil
+}
+
+func (a *Agent) Sync(ctx context.Context, req *pbv1.SyncRequest) (*pbv1.SyncResponse, error) {
+	if !a.mu.TryLock() {
+		return nil, ErrSyncInProgressError
+	}
+	defer a.mu.Unlock()
+
+	a.log.Info().Msg("beginning sync")
+
+	a.log.Debug().Msg("fetching sync data")
+	client, err := a.newClientWithToken()
+	if err != nil {
+		return nil, fmt.Errorf("error constructing client: %w", err)
+	}
 	resp, err := client.GetSyncData(context.Background(), connect.NewRequest(&controllerv1.GetSyncDataRequest{}))
 	if err != nil {
 		return nil, a.logAndHandleError(err, "error getting sync data")
@@ -122,6 +131,19 @@ func (a *Agent) Sync(ctx context.Context, req *pbv1.SyncRequest) (*pbv1.SyncResp
 
 	a.log.Info().Msg("sync completed successfully")
 	return nil, nil
+}
+
+func (a *Agent) ForceRefresh(ctx context.Context) error {
+	client, err := a.newClientWithToken()
+	if err != nil {
+		return fmt.Errorf("error constructing client: %w", err)
+	}
+
+	if _, err := client.ForceRefresh(ctx, &connect.Request[controllerv1.ForceRefreshRequest]{}); err != nil {
+		return fmt.Errorf("error forcing refresh: %w", err)
+	}
+
+	return nil
 }
 
 func (a *Agent) getAccessToken(client controllerv1connect.ControllerServiceClient) (string, error) {

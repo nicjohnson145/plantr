@@ -154,7 +154,10 @@ func (c *Controller) ensureConfig() error {
 	}
 
 	c.log.Debug().Msg("no config loaded, loading now")
+	return c._updateConfig()
+}
 
+func (c *Controller) _updateConfig() error {
 	c.log.Trace().Msgf("fetching latest commit for %v", c.repoUrl)
 	latest, err := c.git.GetLatestCommit(c.repoUrl)
 	if err != nil {
@@ -387,6 +390,14 @@ func (c *Controller) validateLogin(req *pbv1.LoginRequest) error {
 	}
 
 	return nil
+}
+
+func (c *Controller) ForceRefresh(ctx context.Context, req *connect.Request[pbv1.ForceRefreshRequest]) (*connect.Response[pbv1.ForceRefreshResponse], error) {
+	if err := c._updateConfig(); err != nil {
+		return nil, err
+	}
+
+	return &connect.Response[pbv1.ForceRefreshResponse]{}, nil
 }
 
 func (c *Controller) GetSyncData(ctx context.Context, req *connect.Request[pbv1.GetSyncDataRequest]) (*connect.Response[pbv1.GetSyncDataResponse], error) {
