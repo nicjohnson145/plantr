@@ -49,10 +49,10 @@ const (
 
 	VaultEnabled             = "vault.enabled"
 	VaultHashicorpAddress    = "vault.hashicorp.address"
-	VaultHashicorpUsername   = "vault.hashicorp.username"
-	VaultHashicorpPassword   = "vault.hashicorp.password"
+	VaultHashicorpUsername   = "vault.hashicorp.username" //nolint:gosec // its env config, relax
+	VaultHashicorpPassword   = "vault.hashicorp.password" //nolint:gosec // its env config, relax
 	VaultHashicorpTTL        = "vault.hashicorp.ttl"
-	VaultHashicorpSecretPath = "vault.hashicorp.secret_path"
+	VaultHashicorpSecretPath = "vault.hashicorp.secret_path" //nolint:gosec // its env config, relax
 )
 
 var (

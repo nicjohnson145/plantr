@@ -10,7 +10,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/nicjohnson145/hlp"
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"github.com/nicjohnson145/plantr/internal/interceptors"
@@ -43,19 +42,6 @@ func newControllerWithConfig(t *testing.T, conf ControllerConfig, repoConfig *pa
 	ctrl.config = repoConfig
 
 	return ctrl
-}
-
-func seedsEqual(t *testing.T, want []*parsingv2.Seed, got []*parsingv2.Seed) {
-	t.Helper()
-
-	opts := []cmp.Option{
-		cmpopts.IgnoreFields(parsingv2.Seed{}, "Hash"),
-	}
-
-	if diff := cmp.Diff(want, got, opts...); diff != "" {
-		t.Logf("Mismatch (-want +got):\n%s", diff)
-		t.FailNow()
-	}
 }
 
 func pbEqual(t *testing.T, want any, got any) {

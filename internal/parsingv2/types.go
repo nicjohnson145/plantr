@@ -188,7 +188,7 @@ type GitRepo struct {
 }
 
 func (g *GitRepo) DisplayName(_ *Node) (string, error) {
-	ref := ""
+	var ref string
 	if g.Tag != nil {
 		ref = *g.Tag
 	} else {

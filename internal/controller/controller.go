@@ -451,9 +451,7 @@ func (c *Controller) collectSeeds(nodeID string) ([]*parsingv2.Seed, *parsingv2.
 			return nil, nil, fmt.Errorf("node %v references unknown role %v", nodeID, roleName)
 		}
 
-		for _, seed := range seeds {
-			seedList = append(seedList, seed)
-		}
+		seedList = append(seedList, seeds...)
 	}
 
 	return seedList, node, nil
