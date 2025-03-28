@@ -11,6 +11,7 @@ enum VersionType {
 message ConfigFile {
   string content = 1;
   string destination = 2;
+  string mode = 3;
 }
 
 message GithubRelease {

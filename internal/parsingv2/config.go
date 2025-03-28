@@ -143,10 +143,16 @@ func parseSeed_configFile(fsys fs.FS, file *configv1.ConfigFile) (*Seed, error) 
 		return nil, fmt.Errorf("error reading template content: %w", err)
 	}
 
+	mode := "644"
+	if file.Mode != nil {
+		mode = *file.Mode
+	}
+
 	return &Seed{
 		Element: &ConfigFile{
 			TemplateContent: string(tmplBytes),
 			Destination:     file.Destination,
+			Mode:            mode,
 		},
 	}, nil
 }

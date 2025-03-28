@@ -15,6 +15,12 @@ message ConfigFile {
     message: "destination is a required field",
     expression: "size(this) > 0"
   }];
+  // Mode is the file mode (ex: 644, 777, etc) of the rendered file
+  optional string mode = 3 [(buf.validate.field).cel = {
+    id: "ConfigFile.mode"
+    message: "mode must be 3 numbers all less than 7"
+    expression: 'this.matches("^[0-7]{3}$")'
+  }];
 }
 
 message GithubRelease {

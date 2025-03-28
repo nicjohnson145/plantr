@@ -64,6 +64,27 @@ func TestConfigFile(t *testing.T) {
 			},
 			err: "destination is a required field",
 		},
+		{
+			name: "four digit mode",
+			modFunc: func(c *configv1.ConfigFile) {
+				c.Mode = hlp.Ptr("0735")
+			},
+			err: "mode must be 3 numbers all less than 7",
+		},
+		{
+			name: "two digit mode",
+			modFunc: func(c *configv1.ConfigFile) {
+				c.Mode = hlp.Ptr("77")
+			},
+			err: "mode must be 3 numbers all less than 7",
+		},
+		{
+			name: "invalid number",
+			modFunc: func(c *configv1.ConfigFile) {
+				c.Mode = hlp.Ptr("779")
+			},
+			err: "mode must be 3 numbers all less than 7",
+		},
 	}
 	for _, tc := range testData {
 		t.Run(tc.name, func(t *testing.T) {

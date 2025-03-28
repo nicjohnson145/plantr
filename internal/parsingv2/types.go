@@ -3,9 +3,9 @@ package parsingv2
 import (
 	"crypto/md5" //nolint:gosec // its for fingerprinting, it doesnt have to be cryptographically secure
 	"fmt"
+	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"regexp"
 	"strings"
-	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 )
 
 func hash(parts []string) string {
@@ -61,6 +61,7 @@ var _ ISeed = (*ConfigFile)(nil)
 type ConfigFile struct {
 	TemplateContent string
 	Destination     string
+	Mode            string
 }
 
 func (c *ConfigFile) DisplayName(_ *Node) (string, error) {
@@ -72,6 +73,7 @@ func (c *ConfigFile) ComputeHash(_ *Node) (string, error) {
 		"ConfigFile",
 		c.TemplateContent,
 		c.Destination,
+		c.Mode,
 	}), nil
 }
 

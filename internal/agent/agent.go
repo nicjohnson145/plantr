@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
@@ -294,8 +295,13 @@ func (a *Agent) executeSeed_configFile(ctx context.Context, pbseed *controllerv1
 	if err := os.MkdirAll(filepath.Dir(seed.Destination), 0755); err != nil {
 		return nil, fmt.Errorf("error creating containing dir: %w", err)
 	}
-	// TODO: configurable permissions
-	if err := os.WriteFile(seed.Destination, []byte(seed.Content), 0644); err != nil { //nolint:gosec // ignore until configurable permissions
+
+	modeVal, err := strconv.ParseUint("0"+seed.Mode, 8, 32)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing filemode as base8 u32: %w", err)
+	}
+
+	if err := os.WriteFile(seed.Destination, []byte(seed.Content), os.FileMode(modeVal)); err != nil {
 		return nil, fmt.Errorf("error creating file: %w", err)
 	}
 
@@ -310,7 +316,7 @@ func (a *Agent) executeSeed_githubRelease(ctx context.Context, pbseed *controlle
 	resp, err := DownloadFromUrl(ctx, &DownloadRequest{
 		Logger: a.log,
 		Client: a.httpClient,
-		URL: seed.DownloadUrl,
+		URL:    seed.DownloadUrl,
 		RequestModFunc: func(builder *requests.Builder) *requests.Builder {
 			if seed.Authentication != nil && seed.Authentication.BearerAuth != "" {
 				builder = builder.Header("Authorization", seed.Authentication.BearerAuth)

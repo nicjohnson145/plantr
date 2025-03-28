@@ -595,6 +595,7 @@ func (c *Controller) renderSeed_configFile(file *parsingv2.ConfigFile, node *par
 			ConfigFile: &pbv1.ConfigFile{
 				Content:     buf.String(),
 				Destination: dest,
+				Mode:        file.Mode,
 			},
 		},
 	}, nil
