@@ -188,17 +188,24 @@ type GitRepo struct {
 }
 
 func (g *GitRepo) DisplayName(_ *Node) (string, error) {
-	var ref string
-	if g.Tag != nil {
-		ref = *g.Tag
-	} else {
-		ref = *g.Commit
-	}
-	return g.URL + "@" + ref, nil
+	return g.URL + "@" + g.getRef(), nil
 }
 
 func (g *GitRepo) ComputeHash(_ *Node) (string, error) {
-	return "", nil
+	return hash([]string{
+		"GitRepo",
+		g.URL,
+		g.getRef(),
+		g.Location,
+	}), nil
+}
+
+func (g *GitRepo) getRef() string {
+	if g.Tag != nil {
+		return *g.Tag
+	} else {
+		return *g.Commit
+	}
 }
 
 var _ ISeed = (*Golang)(nil)
