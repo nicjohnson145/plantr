@@ -20,3 +20,4 @@ jobs:
       id: tagbot
       env:
         AUTH_TOKEN: ${{ secrets.ACTUAL_PAT }}
+        ALWAYS_PATCH: T
