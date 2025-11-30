@@ -236,6 +236,11 @@ func parseSeed_systemPackage(pkg *configv1.SystemPackage) (*Seed, error) {
 			Name: pkg.Brew.Name,
 		}
 	}
+	if pkg.Pacman != nil {
+		outPkg.Pacman = &SystemPackagePacman{
+			Name: pkg.Pacman.Name,
+		}
+	}
 
 	return &Seed{
 		Element: outPkg,

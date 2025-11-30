@@ -181,14 +181,14 @@ func TestNode(t *testing.T) {
 			modFunc: func(x *configv1.Node) {
 				x.PackageManager = ""
 			},
-			err: `package_manager is required to be one of ["apt", "brew"]`,
+			err: `package_manager is required to be one of ["apt", "brew", "pacman"]`,
 		},
 		{
 			name: "wrong package manager",
 			modFunc: func(x *configv1.Node) {
 				x.PackageManager = "fake-guy"
 			},
-			err: `package_manager is required to be one of ["apt", "brew"]`,
+			err: `package_manager is required to be one of ["apt", "brew", "pacman"]`,
 		},
 	}
 	for _, tc := range testData {
@@ -289,6 +289,9 @@ func TestSystemPackage(t *testing.T) {
 			Brew: &configv1.SystemPackage_Brew{
 				Name: "some-brew-package",
 			},
+			Pacman: &configv1.SystemPackage_Pacman{
+				Name: "some-pacman-package",
+			},
 		}
 	}
 
@@ -314,8 +317,9 @@ func TestSystemPackage(t *testing.T) {
 			modFunc: func(x *configv1.SystemPackage) {
 				x.Apt = nil
 				x.Brew = nil
+				x.Pacman = nil
 			},
-			err: "at least one of ['apt', 'brew'] is required",
+			err: "at least one of ['apt', 'brew', 'pacman'] is required",
 		},
 		{
 			name: "no brew name",
@@ -323,6 +327,13 @@ func TestSystemPackage(t *testing.T) {
 				x.Brew.Name = ""
 			},
 			err: "name is a required field",
+		},
+		{
+			name: "no pacman name",
+			modFunc: func(x *configv1.SystemPackage) {
+				x.Pacman.Name = ""
+			},
+			err: "pacman.name: value is required",
 		},
 	}
 	for _, tc := range testData {
@@ -599,18 +610,18 @@ func TestRoleGroup(t *testing.T) {
 			err:     "",
 		},
 		{
-			name:    "no roles",
+			name: "no roles",
 			modFunc: func(x *configv1.RoleGroup) {
 				x.Roles = nil
 			},
-			err:     "at least one role is required",
+			err: "at least one role is required",
 		},
 		{
-			name:    "invalid role name",
+			name: "invalid role name",
 			modFunc: func(x *configv1.RoleGroup) {
 				x.Roles = []string{"not-a-role"}
 			},
-			err:     "referenced role not-a-role not found",
+			err: "referenced role not-a-role not found",
 		},
 	}
 	for _, tc := range testData {

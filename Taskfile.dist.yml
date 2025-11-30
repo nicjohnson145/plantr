@@ -133,3 +133,5 @@ tasks:
     - docker compose exec -it agent /bin/bash /home/newuser/test.sh
     - grpcurl -plaintext localhost:9091 plantr.agent.v1.AgentService/Sync
     - docker compose exec -it agent-brew /bin/bash /home/newuser/test.sh
+    - grpcurl -plaintext localhost:9092 plantr.agent.v1.AgentService/Sync
+    - docker compose exec -it agent-pacman /bin/bash /home/newuser/test.sh

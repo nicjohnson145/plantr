@@ -47,3 +47,17 @@ services:
     - ./hack/test-repo-keypairs:/opt/keypairs
     ports:
     - 9091:8080
+
+  agent-pacman:
+    build:
+      context: .
+      dockerfile: functional-test-agent-arch.Dockerfile
+    environment:
+      CONTROLLER_ADDRESS: "http://controller:8080"
+      POLL_INTERVAL: "0s"
+      NODE_ID: 01KBBGJKP392TTEM96D9JM8KZT
+      PRIVATE_KEY_PATH: "/opt/keypairs/test-repo-arch-key"
+    volumes:
+    - ./hack/test-repo-keypairs:/opt/keypairs
+    ports:
+    - 9092:8080

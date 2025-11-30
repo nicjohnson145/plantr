@@ -345,6 +345,8 @@ func (a *Agent) executeSeed_systemPackage(ctx context.Context, pbseed *controlle
 		return a.executeSeed_systemPackage_apt(ctx, concrete.Apt)
 	case *controllerv1.SystemPackage_Brew:
 		return a.executeSeed_systemPackage_brew(ctx, concrete.Brew)
+	case *controllerv1.SystemPackage_Pacman:
+		return a.executeSeed_systemPackage_pacman(ctx, concrete.Pacman)
 	default:
 		return nil, fmt.Errorf("unhandled system package type of %T", concrete)
 	}
@@ -369,6 +371,16 @@ func (a *Agent) executeSeed_systemPackage_brew(_ context.Context, pkg *controlle
 		return nil, fmt.Errorf("error during installation: %v\n%v", err, stderr)
 	}
 
+	return &InventoryRow{
+		Package: hlp.Ptr(pkg.Name),
+	}, nil
+}
+
+func (a *Agent) executeSeed_systemPackage_pacman(_ context.Context, pkg *controllerv1.SystemPackage_PacmanPkg) (*InventoryRow, error) {
+	_, stderr, err := ExecuteOSCommand("/bin/sh", "-c", fmt.Sprintf("sudo pacman -S --noconfirm %v", pkg.Name))
+	if err != nil {
+		return nil, fmt.Errorf("error running pacman: %w\n%v", err, stderr)
+	}
 	return &InventoryRow{
 		Package: hlp.Ptr(pkg.Name),
 	}, nil
@@ -403,6 +415,11 @@ func (a *Agent) getSystemPackageUpdateFunc(seeds []*controllerv1.Seed) (func() e
 	case *controllerv1.SystemPackage_Brew:
 		return func() error {
 			a.log.Warn().Msg("brew pre-update function not implemented yet")
+			return nil
+		}, nil
+	case *controllerv1.SystemPackage_Pacman:
+		return func() error {
+			a.log.Debug().Msg("pacman system updates could be breaking or undesired, intentionally not updating remotes")
 			return nil
 		}, nil
 	default:

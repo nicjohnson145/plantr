@@ -116,11 +116,16 @@ type SystemPackageBrew struct {
 	Name string
 }
 
+type SystemPackagePacman struct {
+	Name string
+}
+
 var _ ISeed = (*SystemPackage)(nil)
 
 type SystemPackage struct {
-	Apt  *SystemPackageApt
-	Brew *SystemPackageBrew
+	Apt    *SystemPackageApt
+	Brew   *SystemPackageBrew
+	Pacman *SystemPackagePacman
 }
 
 func (s *SystemPackage) DisplayName(node *Node) (string, error) {
@@ -173,6 +178,11 @@ func (s *SystemPackage) getNameObject(node *Node) (string, *pbv1.SystemPackage, 
 			return "", nil, fmt.Errorf("node has brew package manager but no brew package configured")
 		}
 		return s.Brew.Name, &pbv1.SystemPackage{Pkg: &pbv1.SystemPackage_Brew{Brew: &pbv1.SystemPackage_BrewPkg{Name: s.Brew.Name}}}, nil
+	case "pacman":
+		if s.Pacman == nil {
+			return "", nil, fmt.Errorf("node has pacman package manager but no pacman package configured")
+		}
+		return s.Pacman.Name, &pbv1.SystemPackage{Pkg: &pbv1.SystemPackage_Pacman{Pacman: &pbv1.SystemPackage_PacmanPkg{Name: s.Pacman.Name}}}, nil
 	default:
 		return "", nil, fmt.Errorf("unhandled package manager %v", node.PackageManager)
 	}

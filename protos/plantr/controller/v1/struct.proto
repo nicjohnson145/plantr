@@ -33,9 +33,13 @@ message SystemPackage {
   message BrewPkg {
     string name = 1;
   }
+  message PacmanPkg {
+    string name = 1;
+  }
   oneof pkg {
     AptPkg apt = 1;
     BrewPkg brew = 2;
+    PacmanPkg pacman = 3;
   }
 }
 
