@@ -21,3 +21,4 @@ jobs:
       env:
         AUTH_TOKEN: ${{ secrets.ACTUAL_PAT }}
         ALWAYS_PATCH: T
+        LATEST: T
