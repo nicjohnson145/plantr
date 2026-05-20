@@ -10,6 +10,7 @@ packages:
     interfaces:
       GitClient:
       StorageClient:
+      VaultClient:
   github.com/nicjohnson145/plantr/internal/agent:
     interfaces:
       InventoryClient:
