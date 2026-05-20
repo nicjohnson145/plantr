@@ -6,10 +6,12 @@ import (
 	pbv1 "github.com/nicjohnson145/plantr/gen/plantr/controller/v1"
 	"regexp"
 	"strings"
+	"encoding/hex"
 )
 
 func hash(parts []string) string {
-	return fmt.Sprint(md5.Sum([]byte(strings.Join(parts, "")))) //nolint: gosec // its a hash, it doesnt have to be cryptographically secure
+	h := md5.Sum([]byte(strings.Join(parts, ""))) //nolint: gosec // its a hash, it doesnt have to be cryptographically secure
+	return hex.EncodeToString(h[:])
 }
 
 type ISeed interface {
