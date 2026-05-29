@@ -16,3 +16,10 @@ plugins:
   out: gen
   opt:
   - paths=source_relative
+- local:
+  - go
+  - run
+  - github.com/cerbos/protoc-gen-go-hashpb@v0.5.0
+  out: gen
+  opt:
+  - paths=source_relative

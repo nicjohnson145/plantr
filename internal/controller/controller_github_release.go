@@ -33,12 +33,13 @@ func basicAuth(user string, pass string) string {
 
 func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *parsingv2.GithubRelease, node *parsingv2.Node) (*pbv1.Seed, error) {
 	c.log.Trace().Msg("reading asset cache")
-	hash, err := c.hashFunc(&parsingv2.Seed{Element: release}, node)
-	if err != nil {
-		return nil, err
-	}
+	assetHash := baseHash([]string{
+		"GithubRelease",
+		release.Repo,
+		release.Tag,
+	})
 	assertUrl, err := c.store.ReadGithubReleaseAsset(ctx, &DBGithubRelease{
-		Hash: hash,
+		Hash: assetHash,
 		OS:   node.OS,
 		Arch: node.Arch,
 	})
@@ -71,7 +72,7 @@ func (c *Controller) renderSeed_githubRelease(ctx context.Context, release *pars
 		assertUrl = asset.DownloadUrl
 
 		cachedRelease := &DBGithubRelease{
-			Hash:        hash,
+			Hash:        assetHash,
 			OS:          node.OS,
 			Arch:        node.Arch,
 			DownloadURL: assertUrl,

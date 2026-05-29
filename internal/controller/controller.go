@@ -54,8 +54,8 @@ type ControllerConfig struct {
 
 	GithubWebhookSecret []byte
 
-	NowFunc  func() time.Time                                       // for unit tests
-	HashFunc func(*parsingv2.Seed, *parsingv2.Node) (string, error) // for unit tests
+	NowFunc  func() time.Time                   // for unit tests
+	HashFunc func(s *pbv1.Seed) (string, error) // for unit tests
 }
 
 func NewController(conf ControllerConfig) (*Controller, error) {
@@ -86,9 +86,7 @@ func NewController(conf ControllerConfig) (*Controller, error) {
 		}
 	}
 	if ctrl.hashFunc == nil {
-		ctrl.hashFunc = func(s *parsingv2.Seed, node *parsingv2.Node) (string, error) {
-			return s.ComputeHash(node)
-		}
+		ctrl.hashFunc = ComputeHash
 	}
 
 	return ctrl, nil
@@ -113,8 +111,8 @@ type Controller struct {
 	vaultMu   *sync.RWMutex
 	vaultData *vaultData
 
-	nowFunc  func() time.Time                                       // for unit tests
-	hashFunc func(*parsingv2.Seed, *parsingv2.Node) (string, error) // for unit tests
+	nowFunc  func() time.Time                   // for unit tests
+	hashFunc func(s *pbv1.Seed) (string, error) // for unit tests
 }
 
 func (c *Controller) now() time.Time {
@@ -488,19 +486,10 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 		}
 
 		c.log.Debug().Msgf("rendering seed %v", displayName)
-		hash, err := c.hashFunc(seed, node)
-		if err != nil {
-			return nil, namedError(err)
-		}
-		if renderedSeeds.Contains(hash) {
-			c.log.Debug().Msg("seed with same hash already rendered, skipping")
-			continue
-		}
 
 		outSeed := &pbv1.Seed{
 			Metadata: &pbv1.Seed_Metadata{
 				DisplayName: displayName,
-				Hash:        hash,
 			},
 		}
 
@@ -544,6 +533,16 @@ func (c *Controller) renderSeeds(ctx context.Context, node *parsingv2.Node, seed
 		default:
 			return nil, fmt.Errorf("unhandled seed type of %T", concrete)
 		}
+
+		hash, err := c.hashFunc(outSeed)
+		if err != nil {
+			return nil, namedError(err)
+		}
+		if renderedSeeds.Contains(hash) {
+			c.log.Debug().Msg("seed with same hash already rendered, skipping")
+			continue
+		}
+		outSeed.Metadata.Hash = hash
 
 		outSeeds = append(outSeeds, outSeed)
 	}
