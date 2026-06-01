@@ -52,7 +52,9 @@ func DownloadFromUrl(ctx context.Context, req *DownloadRequest) (*DownloadRespon
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp directory: %w", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
 
 	filename := filepath.Base(req.URL)
 	tmpPath := filepath.Join(tmpDir, filename)
@@ -83,7 +85,9 @@ func DownloadFromUrl(ctx context.Context, req *DownloadRequest) (*DownloadRespon
 		if err != nil {
 			return nil, fmt.Errorf("error opening file for reading: %w", err)
 		}
-		defer fl.Close()
+		defer func() {
+			_ = fl.Close()
+		}()
 
 		a, s, err := archives.Identify(ctx, filename, fl)
 		if err != nil {
@@ -130,13 +134,17 @@ func DownloadFromUrl(ctx context.Context, req *DownloadRequest) (*DownloadRespon
 			if err != nil {
 				return fmt.Errorf("error opening file in archive: %w", err)
 			}
-			defer fl.Close()
+			defer func() {
+				_ = fl.Close()
+			}()
 
 			dstFile, err := os.Create(dstPath)
 			if err != nil {
 				return fmt.Errorf("error creating destination file: %w", err)
 			}
-			defer dstFile.Close()
+			defer func() {
+				_ = dstFile.Close()
+			}()
 
 			if _, err := io.Copy(dstFile, fl); err != nil {
 				return fmt.Errorf("error copying file: %w", err)
@@ -189,7 +197,9 @@ func DownloadFromUrl(ctx context.Context, req *DownloadRequest) (*DownloadRespon
 			if err != nil {
 				return fmt.Errorf("error opening file: %w", err)
 			}
-			defer fl.Close()
+			defer func() {
+				_ = fl.Close()
+			}()
 
 			flBytes, err := io.ReadAll(fl)
 			if err != nil {

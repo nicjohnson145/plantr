@@ -42,7 +42,7 @@ func NewStorageClientFromEnv(logger zerolog.Logger) (StorageClient, func(), erro
 	}
 
 	cleanup = func() {
-		db.Close()
+		_ = db.Close()
 	}
 
 	logger.Info().Msg("executing migrations")

@@ -447,7 +447,9 @@ func (a *Agent) executeSeed_golang(_ context.Context, seed *controllerv1.Seed) (
 	if err != nil {
 		return nil, fmt.Errorf("unable to make temp directory")
 	}
-	defer os.RemoveAll(dir)
+	defer func() {
+		_ = os.RemoveAll(dir)
+	}()
 
 	tarball := fmt.Sprintf("go%v.linux-%v.tar.gz", golang.Version, runtime.GOARCH)
 	filepath := filepath.Join(dir, tarball)
