@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nicjohnson145/plantr/internal/agent"
+	"github.com/nicjohnson145/plantr/internal/client"
 	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/spf13/viper"
 )
@@ -35,13 +35,12 @@ func InitConfig() error {
 	viper.SetDefault(LoggingLevel, DefaultLogLevel)
 	viper.SetDefault(LoggingFormat, DefaultLogFormat)
 
-	if err := agent.SetWorkerDefaults(); err != nil {
+	if err := client.SetConfigDefaults(); err != nil {
 		return err
 	}
 
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
 
 	if err := viper.ReadInConfig(); err != nil && !errors.Is(err, &viper.ConfigFileNotFoundError{}) {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {

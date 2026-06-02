@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nicjohnson145/plantr/internal/client"
 	"github.com/nicjohnson145/plantr/internal/logging"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
@@ -32,7 +33,7 @@ func NewAgentFromEnv(logger zerolog.Logger) (*Agent, func(), error) {
 		return nil, cleanup, errors.New("node is must be set")
 	}
 
-	inventory, inventoryCleanup, err := NewInventoryClientFromEnv(logging.Component(logger, "inventory"))
+	inventory, inventoryCleanup, err := client.NewInventoryClientFromEnv(logging.Component(logger, "inventory"))
 	if err != nil {
 		return nil, cleanup, fmt.Errorf("error creating inventory client: %w", err)
 	}
