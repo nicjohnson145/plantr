@@ -122,7 +122,7 @@ message UrlDownload {
     }
 
     ArchGroup linux = 1;
-    ArchGroup mac = 2;
+    ArchGroup darwin = 2;
   }
 
   OsGroup urls = 1;

@@ -357,9 +357,9 @@ func plantr_config_v1_UrlDownload_OsGroup_hashpb_sum(m *UrlDownload_OsGroup, has
 			plantr_config_v1_UrlDownload_OsGroup_ArchGroup_hashpb_sum(m.GetLinux(), hasher, ignore, b)
 		}
 	}
-	if _, ok := ignore["plantr.config.v1.UrlDownload.OsGroup.mac"]; !ok {
-		if m.GetMac() != nil {
-			plantr_config_v1_UrlDownload_OsGroup_ArchGroup_hashpb_sum(m.GetMac(), hasher, ignore, b)
+	if _, ok := ignore["plantr.config.v1.UrlDownload.OsGroup.darwin"]; !ok {
+		if m.GetDarwin() != nil {
+			plantr_config_v1_UrlDownload_OsGroup_ArchGroup_hashpb_sum(m.GetDarwin(), hasher, ignore, b)
 		}
 	}
 }

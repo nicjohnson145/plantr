@@ -321,8 +321,8 @@ func parseSeed_urlDownload(urlDownload *configv1.UrlDownload) (*Seed, error) {
 	if urlDownload.Urls.Linux != nil {
 		element.Urls["linux"] = setArchUrls(urlDownload.Urls.Linux)
 	}
-	if urlDownload.Urls.Mac != nil {
-		element.Urls["darwin"] = setArchUrls(urlDownload.Urls.Mac)
+	if urlDownload.Urls.Darwin != nil {
+		element.Urls["darwin"] = setArchUrls(urlDownload.Urls.Darwin)
 	}
 
 	urlCount := 0

@@ -536,7 +536,7 @@ func TestUrlDownload(t *testing.T) {
 				Linux: &configv1.UrlDownload_OsGroup_ArchGroup{
 					Amd64: hlp.Ptr("some-linux-amd64-url"),
 				},
-				Mac: &configv1.UrlDownload_OsGroup_ArchGroup{
+				Darwin: &configv1.UrlDownload_OsGroup_ArchGroup{
 					Amd64: hlp.Ptr("some-mac-amd64-url"),
 				},
 			},
@@ -556,14 +556,14 @@ func TestUrlDownload(t *testing.T) {
 		{
 			name: "valid single url",
 			modFunc: func(x *configv1.UrlDownload) {
-				x.Urls.Mac = nil
+				x.Urls.Darwin = nil
 			},
 			err: "",
 		},
 		{
 			name: "no urls",
 			modFunc: func(x *configv1.UrlDownload) {
-				x.Urls.Mac = nil
+				x.Urls.Darwin = nil
 				x.Urls.Linux = nil
 			},
 			err: "must specify at least one OS/Arch url",
