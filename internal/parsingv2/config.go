@@ -181,21 +181,21 @@ func parseSeed_githubRelease(release *configv1.GithubRelease) (*Seed, error) {
 				assetPatterns["linux"]["arm64"] = pat
 			}
 		}
-		if release.AssetPatterns.Mac != nil {
-			assetPatterns["mac"] = map[string]*regexp.Regexp{}
-			if release.AssetPatterns.Mac.Amd64 != "" {
-				pat, err := regexp.Compile(release.AssetPatterns.Mac.Amd64)
+		if release.AssetPatterns.Darwin != nil {
+			assetPatterns["darwin"] = map[string]*regexp.Regexp{}
+			if release.AssetPatterns.Darwin.Amd64 != "" {
+				pat, err := regexp.Compile(release.AssetPatterns.Darwin.Amd64)
 				if err != nil {
-					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "mac", "amd64", err)
+					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "darwin", "amd64", err)
 				}
-				assetPatterns["mac"]["amd64"] = pat
+				assetPatterns["darwin"]["amd64"] = pat
 			}
-			if release.AssetPatterns.Mac.Arm64 != "" {
-				pat, err := regexp.Compile(release.AssetPatterns.Mac.Arm64)
+			if release.AssetPatterns.Darwin.Arm64 != "" {
+				pat, err := regexp.Compile(release.AssetPatterns.Darwin.Arm64)
 				if err != nil {
-					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "mac", "arm64", err)
+					return nil, fmt.Errorf("%w: error parsing regex for %v/%v: %w", ErrGithubReleaseInvalidRegexError, "darwin", "arm64", err)
 				}
-				assetPatterns["mac"]["arm64"] = pat
+				assetPatterns["darwin"]["arm64"] = pat
 			}
 		}
 	}

@@ -130,9 +130,9 @@ func plantr_config_v1_GithubRelease_AssetPattern_hashpb_sum(m *GithubRelease_Ass
 			plantr_config_v1_GithubRelease_AssetPattern_ArchPattern_hashpb_sum(m.GetLinux(), hasher, ignore, b)
 		}
 	}
-	if _, ok := ignore["plantr.config.v1.GithubRelease.AssetPattern.mac"]; !ok {
-		if m.GetMac() != nil {
-			plantr_config_v1_GithubRelease_AssetPattern_ArchPattern_hashpb_sum(m.GetMac(), hasher, ignore, b)
+	if _, ok := ignore["plantr.config.v1.GithubRelease.AssetPattern.darwin"]; !ok {
+		if m.GetDarwin() != nil {
+			plantr_config_v1_GithubRelease_AssetPattern_ArchPattern_hashpb_sum(m.GetDarwin(), hasher, ignore, b)
 		}
 	}
 }

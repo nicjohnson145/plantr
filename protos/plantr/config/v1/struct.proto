@@ -30,7 +30,7 @@ message GithubRelease {
       string arm64 = 2;
     }
     ArchPattern linux = 1;
-    ArchPattern mac = 2;
+    ArchPattern darwin = 2;
   }
 
   string repo = 1 [(buf.validate.field).cel = {
